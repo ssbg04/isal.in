@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  body {
+    @apply min-h-screen antialiased transition-colors duration-200 selection:bg-neutral-800 selection:text-white dark:selection:bg-neutral-200 dark:selection:text-neutral-900;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
