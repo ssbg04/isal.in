@@ -28,6 +28,8 @@ import {
   Zap,
   Heart,
   GraduationCap,
+  Music,
+  Video,
 } from 'lucide-react';
 import type { ToolType } from '../services/conversionService';
 
@@ -49,6 +51,8 @@ interface CommandPaletteProps {
 const TOOL_ICONS: Record<ToolType, React.ReactNode> = {
   'image-convert': <FileImage className="w-4 h-4 text-amber-500" />,
   'images-to-pdf': <FileText className="w-4 h-4 text-rose-500" />,
+  'audio-convert': <Music className="w-4 h-4 text-amber-500" />,
+  'video-convert': <Video className="w-4 h-4 text-rose-500" />,
   'json-yaml': <Code2 className="w-4 h-4 text-sky-500" />,
   'base64': <ArrowRightLeft className="w-4 h-4 text-emerald-500" />,
   'url-encode': <Link className="w-4 h-4 text-blue-500" />,
@@ -74,8 +78,10 @@ const TOOL_ICONS: Record<ToolType, React.ReactNode> = {
 };
 
 const TOOL_ALIASES: Record<ToolType, string[]> = {
-  'image-convert': ['webp', 'png', 'jpg', 'jpeg', 'resize', 'dimensions', 'compress', 'scale', 'aspect ratio'],
+  'image-convert': ['webp', 'png', 'jpg', 'jpeg', 'avif', 'bmp', 'ico', 'favicon', 'gif', 'resize', 'dimensions', 'compress', 'scale'],
   'images-to-pdf': ['pdf', 'doc', 'compile', 'merge', 'pages', 'document', 'booklet'],
+  'audio-convert': ['audio', 'music', 'sound', 'mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'volume', 'trim', 'extract audio'],
+  'video-convert': ['video', 'movie', 'clip', 'mp4', 'webm', 'mov', 'mkv', 'transcode', 'compress', 'snapshot', 'frame'],
   'json-yaml': ['json', 'yaml', 'yml', 'format', 'beautify', 'minify', 'syntax', 'serialize'],
   'base64': ['b64', 'base64', 'encode', 'decode', 'binary', 'ascii', 'data url'],
   'url-encode': ['url', 'uri', 'percent', 'query string', 'escape', 'unescape', 'params'],
@@ -261,7 +267,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       <div className="fixed inset-0 -z-10" onClick={onClose} />
 
       {/* Palette Container */}
-      <div className="w-full max-w-xl bg-white/95 dark:bg-[#0c0e14]/95 border border-neutral-200/90 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden glass-card flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-150 relative">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette and quick tool switcher"
+        className="w-full max-w-xl bg-white/95 dark:bg-[#0c0e14]/95 border border-neutral-200/90 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden glass-card flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-150 relative"
+      >
         {/* Glowing top line */}
         <div className="h-0.5 bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
 
@@ -271,6 +282,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-expanded="true"
+            aria-autocomplete="list"
+            aria-controls="command-palette-results"
+            aria-activedescendant={filteredTools[selectedIndex] ? `cmd-item-${filteredTools[selectedIndex].id}` : undefined}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -282,6 +298,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           {query ? (
             <button
               onClick={() => setQuery('')}
+              aria-label="Clear search query"
               className="p-1 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-white transition cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
@@ -321,7 +338,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         )}
 
         {/* Results List */}
-        <div ref={resultsContainerRef} className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-1">
+        <div
+          ref={resultsContainerRef}
+          id="command-palette-results"
+          role="listbox"
+          aria-label="Tool search results"
+          className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-1"
+        >
           {filteredTools.length === 0 ? (
             <div className="py-12 text-center text-xs text-neutral-400 space-y-1">
               <p className="font-medium text-neutral-600 dark:text-neutral-300">No matching tools found</p>
@@ -333,6 +356,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               return (
                 <button
                   key={tool.id}
+                  id={`cmd-item-${tool.id}`}
+                  role="option"
+                  aria-selected={isSelected}
                   data-selected={isSelected ? 'true' : 'false'}
                   onClick={() => {
                     onSelectTool(tool.id);

@@ -30,9 +30,13 @@ const CATEGORY_TABS: { id: UnitCategory; label: string; icon: React.ComponentTyp
 
 interface UnitConverterToolProps {
   initialCategory?: UnitCategory;
+  onCategoryChange?: (category: UnitCategory) => void;
 }
 
-export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({ initialCategory = 'length' }) => {
+export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
+  initialCategory = 'length',
+  onCategoryChange,
+}) => {
   const [activeCategory, setActiveCategory] = useState<UnitCategory>(initialCategory);
   const [inputValue, setInputValue] = useState<string>('1');
   const [fromUnitId, setFromUnitId] = useState<string>(() => {
@@ -55,6 +59,7 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({ initialCat
       setFromUnitId(newUnits[0].id);
       setToUnitId(newUnits[1] ? newUnits[1].id : newUnits[0].id);
     }
+    onCategoryChange?.(cat);
   };
 
   const numValue = useMemo(() => {

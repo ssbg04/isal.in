@@ -1,6 +1,8 @@
 export type ToolType = 
   | 'image-convert'
   | 'images-to-pdf'
+  | 'audio-convert'
+  | 'video-convert'
   | 'json-yaml'
   | 'base64'
   | 'url-encode'
@@ -24,6 +26,8 @@ export type ToolType =
   | 'bmi-calc'
   | 'gwa-calc';
 
+import { canvasToBmpBlob, canvasToIcoBlob, type SupportedImageFormat } from './imageFormatsService';
+
 export interface ConversionResult {
   filename: string;
   blob?: Blob;
@@ -43,10 +47,10 @@ export interface ColorFormats {
   b: number;
 }
 
-/** Convert image format (PNG, JPEG, WebP) and quality entirely in-browser */
+/** Convert image format (PNG, JPEG, WebP, AVIF, BMP, ICO, GIF) and quality entirely in-browser */
 export async function convertImage(
   file: File,
-  targetFormat: 'image/png' | 'image/jpeg' | 'image/webp',
+  targetFormat: SupportedImageFormat = 'image/webp',
   quality: number = 0.85,
   maxWidth?: number,
   maxHeight?: number
@@ -55,7 +59,7 @@ export async function convertImage(
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         let width = img.naturalWidth;
         let height = img.naturalHeight;
 
@@ -76,7 +80,7 @@ export async function convertImage(
           return reject(new Error('Canvas context unavailable'));
         }
 
-        // Fill white background for JPEG conversions if alpha exists
+        // Fill white background for JPEG / BMP conversions if alpha exists
         if (targetFormat === 'image/jpeg') {
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, width, height);
@@ -84,24 +88,80 @@ export async function convertImage(
 
         ctx.drawImage(img, 0, 0, width, height);
 
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) return reject(new Error('Conversion failed'));
-            const ext = targetFormat === 'image/png' ? 'png' : targetFormat === 'image/jpeg' ? 'jpg' : 'webp';
-            const originalBase = file.name.replace(/\.[^/.]+$/, '');
-            const newName = `${originalBase}-converted.${ext}`;
-            const downloadUrl = URL.createObjectURL(blob);
-            resolve({
+        const extMap: Record<SupportedImageFormat, string> = {
+          'image/png': 'png',
+          'image/jpeg': 'jpg',
+          'image/webp': 'webp',
+          'image/avif': 'avif',
+          'image/bmp': 'bmp',
+          'image/x-icon': 'ico',
+          'image/gif': 'gif',
+        };
+        const ext = extMap[targetFormat] || 'png';
+        const originalBase = file.name.replace(/\.[^/.]+$/, '');
+        const newName = `${originalBase}-converted.${ext}`;
+
+        try {
+          if (targetFormat === 'image/bmp') {
+            const bmpBlob = canvasToBmpBlob(canvas);
+            const downloadUrl = URL.createObjectURL(bmpBlob);
+            return resolve({
               filename: newName,
-              blob,
+              blob: bmpBlob,
               downloadUrl,
-              sizeBytes: blob.size,
+              sizeBytes: bmpBlob.size,
               originalSizeBytes: file.size,
             });
-          },
-          targetFormat,
-          quality
-        );
+          }
+
+          if (targetFormat === 'image/x-icon') {
+            const icoBlob = await canvasToIcoBlob(canvas);
+            const downloadUrl = URL.createObjectURL(icoBlob);
+            return resolve({
+              filename: newName,
+              blob: icoBlob,
+              downloadUrl,
+              sizeBytes: icoBlob.size,
+              originalSizeBytes: file.size,
+            });
+          }
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                // If browser canvas doesn't support AVIF/GIF toBlob, fallback to PNG
+                canvas.toBlob(
+                  (fallbackBlob) => {
+                    if (!fallbackBlob) return reject(new Error('Conversion failed'));
+                    const fallbackName = `${originalBase}-converted.png`;
+                    const downloadUrl = URL.createObjectURL(fallbackBlob);
+                    resolve({
+                      filename: fallbackName,
+                      blob: fallbackBlob,
+                      downloadUrl,
+                      sizeBytes: fallbackBlob.size,
+                      originalSizeBytes: file.size,
+                    });
+                  },
+                  'image/png'
+                );
+                return;
+              }
+              const downloadUrl = URL.createObjectURL(blob);
+              resolve({
+                filename: newName,
+                blob,
+                downloadUrl,
+                sizeBytes: blob.size,
+                originalSizeBytes: file.size,
+              });
+            },
+            targetFormat,
+            quality
+          );
+        } catch (err: unknown) {
+          reject(err instanceof Error ? err : new Error('Image export failed'));
+        }
       };
       img.onerror = () => reject(new Error('Unable to read image file'));
       img.src = e.target?.result as string;

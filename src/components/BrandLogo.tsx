@@ -3,12 +3,14 @@ import React from 'react';
 interface BrandLogoProps {
   size?: 'sm' | 'md' | 'lg' | number;
   showWordmark?: boolean;
+  showMotto?: boolean;
   className?: string;
 }
 
 export const BrandLogo: React.FC<BrandLogoProps> = ({
   size = 'md',
   showWordmark = true,
+  showMotto = false,
   className = '',
 }) => {
   let iconSize = 36;
@@ -29,8 +31,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         viewBox="256 124 512 512"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        role="img"
+        aria-label="Isal.in Multi-Converter Logo"
         className="shrink-0 drop-shadow-xs transition-transform duration-200 hover:scale-105"
       >
+        <title>Isal.in Multi-Converter</title>
         <defs>
           <clipPath id="bl_disc">
             <circle r="128" />
@@ -106,6 +111,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           <span className="text-[9px] font-mono tracking-widest uppercase text-neutral-400 dark:text-neutral-500 font-medium">
             Multi-Converter
           </span>
+          {showMotto && (
+            <span className="text-[10px] italic font-semibold text-amber-600 dark:text-amber-400 mt-1 tracking-tight">
+              Isalin ang lahat. Convert anything.
+            </span>
+          )}
         </div>
       )}
     </div>

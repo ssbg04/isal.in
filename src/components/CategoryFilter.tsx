@@ -183,7 +183,7 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
   ];
 
   return (
-    <div className="w-full">
+    <nav aria-label="Tool Categories" className="w-full">
       {/* Category Header with Title & View Mode Toggle */}
       <div className="flex items-center justify-between mb-2 px-1">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-neutral-600 dark:text-neutral-400">
@@ -193,6 +193,8 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
         <button
           onClick={toggleWrap}
           type="button"
+          aria-pressed={isWrapped}
+          aria-label={isWrapped ? 'Switch to compact category carousel' : 'Expand all category pills in grid view'}
           title={isWrapped ? 'Switch to compact scrollable bar' : 'Expand all categories (grid view)'}
           className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 hover:text-neutral-900 dark:hover:text-white px-2 py-0.5 rounded-md hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition"
         >
@@ -224,6 +226,8 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
         {/* Categories List */}
         <div
           ref={containerRef}
+          role="tablist"
+          aria-label="Tool category filters"
           onScroll={checkScroll}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -242,6 +246,9 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
             return (
               <button
                 key={cat.id}
+                role="tab"
+                aria-selected={isSelected}
+                aria-label={`${cat.label} category filter, ${cat.count} utilities`}
                 onClick={(e) => handlePillClick(cat.id, e)}
                 type="button"
                 className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 cursor-pointer ${
@@ -288,6 +295,6 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </nav>
   );
 };

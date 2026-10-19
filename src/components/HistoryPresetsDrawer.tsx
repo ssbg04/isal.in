@@ -85,7 +85,12 @@ export const HistoryPresetsDrawer: React.FC<HistoryPresetsDrawerProps> = ({
       />
 
       {/* Drawer Panel */}
-      <div className="relative w-full max-w-md bg-white dark:bg-[#0c0e14] border-l border-neutral-200/80 dark:border-white/10 shadow-2xl flex flex-col h-full z-10 animate-in slide-in-from-right duration-200">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Activity history and preset workflows drawer"
+        className="relative w-full max-w-md bg-white dark:bg-[#0c0e14] border-l border-neutral-200/80 dark:border-white/10 shadow-2xl flex flex-col h-full z-10 animate-in slide-in-from-right duration-200"
+      >
         {/* Top Specular Glow Edge */}
         <div className="h-0.5 bg-gradient-to-r from-amber-500/20 via-amber-500 to-amber-500/20" />
 
@@ -109,6 +114,7 @@ export const HistoryPresetsDrawer: React.FC<HistoryPresetsDrawerProps> = ({
 
           <button
             onClick={onClose}
+            aria-label="Close activity history drawer"
             className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -116,8 +122,10 @@ export const HistoryPresetsDrawer: React.FC<HistoryPresetsDrawerProps> = ({
         </div>
 
         {/* Tab Switcher */}
-        <div className="px-4 pt-3 pb-2 border-b border-neutral-200/60 dark:border-white/5 flex gap-2">
+        <div role="tablist" aria-label="Activity drawer tabs" className="px-4 pt-3 pb-2 border-b border-neutral-200/60 dark:border-white/5 flex gap-2">
           <button
+            role="tab"
+            aria-selected={activeTab === 'history'}
             onClick={() => setActiveTab('history')}
             className={`flex-1 py-2 px-3 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'history'
@@ -135,6 +143,8 @@ export const HistoryPresetsDrawer: React.FC<HistoryPresetsDrawerProps> = ({
           </button>
 
           <button
+            role="tab"
+            aria-selected={activeTab === 'presets'}
             onClick={() => setActiveTab('presets')}
             className={`flex-1 py-2 px-3 rounded-xl font-semibold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'presets'

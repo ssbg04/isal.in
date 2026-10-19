@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Shield, X, Lock, EyeOff, Server, CheckCircle2 } from 'lucide-react';
+import { Shield, X, Lock, EyeOff, Server, CheckCircle2, Mail } from 'lucide-react';
 
 interface PrivacyModalProps {
   isOpen: boolean;
@@ -121,6 +121,23 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
             </div>
             <p className="text-neutral-600 dark:text-neutral-300 text-xs">
               We only use your browser's <code className="text-neutral-800 dark:text-neutral-200">localStorage</code> to remember your interface preferences (such as dark mode vs light mode). This information never leaves your device.
+            </p>
+          </div>
+
+          {/* Section 5 */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-semibold">
+              <Mail className="w-4 h-4 text-amber-500" />
+              <h3>5. Suggestions, Feedback & Bug Reports</h3>
+            </div>
+            <p className="text-neutral-600 dark:text-neutral-300 text-xs">
+              Have a suggestion for a new Philippine calculator or developer converter? Encountered an issue? Reach out directly via email at{' '}
+              <a
+                href="mailto:crischarlesgarcia345@gmail.com?subject=Isal.in%20Inquiry%20or%20Suggestion"
+                className="text-amber-600 dark:text-amber-400 font-semibold underline underline-offset-2 hover:text-amber-500"
+              >
+                crischarlesgarcia345@gmail.com
+              </a>.
             </p>
           </div>
         </div>

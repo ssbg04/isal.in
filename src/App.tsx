@@ -40,6 +40,9 @@ import {
   Zap,
   Heart,
   GraduationCap,
+  Music,
+  Video,
+  Mail,
 } from 'lucide-react';
 import { AdSlot } from './components/AdSlot';
 import { CategoryFilter } from './components/CategoryFilter';
@@ -61,6 +64,9 @@ import { MortgageCalculator } from './components/tools/MortgageCalculator';
 import { ElectricityCalculator } from './components/tools/ElectricityCalculator';
 import { BmiCalculator } from './components/tools/BmiCalculator';
 import { PhilippineGwaCalculator } from './components/tools/PhilippineGwaCalculator';
+import { AudioConverterTool } from './components/tools/AudioConverterTool';
+import { VideoConverterTool } from './components/tools/VideoConverterTool';
+import type { SupportedImageFormat } from './services/imageFormatsService';
 import type {
   ToolType,
   ConversionResult,
@@ -106,7 +112,7 @@ const TOOLS: ToolMeta[] = [
     id: 'image-convert',
     title: 'Image Converter & Resizer',
     category: 'media',
-    shortDesc: 'WebP, PNG, JPG with compression and dimension scaling',
+    shortDesc: 'WebP, PNG, JPG, AVIF, BMP, ICO with compression & dimensions',
     badge: 'Media',
   },
   {
@@ -115,6 +121,20 @@ const TOOLS: ToolMeta[] = [
     category: 'media',
     shortDesc: 'Bundle multiple pictures into a single organized PDF',
     badge: 'Media',
+  },
+  {
+    id: 'audio-convert',
+    title: 'Audio Converter & Extractor',
+    category: 'media',
+    shortDesc: 'MP3, WAV, WebM, OGG with volume boost, trimming & video extraction',
+    badge: 'Audio',
+  },
+  {
+    id: 'video-convert',
+    title: 'Video Converter & Transcoder',
+    category: 'media',
+    shortDesc: 'MP4, WebM transcoding, resolution scaling, muting & frame snapshots',
+    badge: 'Video',
   },
   {
     id: 'json-yaml',
@@ -275,7 +295,7 @@ const TOOLS: ToolMeta[] = [
 ];
 
 const CATEGORIES: { id: Category; label: string; count: number }[] = [
-  { id: 'media', label: 'Media & Documents', count: 2 },
+  { id: 'media', label: 'Media & Documents', count: 4 },
   { id: 'developer', label: 'Data & Formats', count: 7 },
   { id: 'security', label: 'Encoding & Security', count: 2 },
   { id: 'units', label: 'Units & Measurements', count: 8 },
@@ -323,7 +343,7 @@ export function App() {
   // File state
   const [files, setFiles] = useState<File[]>([]);
   const [originalPreviewUrl, setOriginalPreviewUrl] = useState<string | null>(null);
-  const [targetImageFormat, setTargetImageFormat] = useState<'image/webp' | 'image/png' | 'image/jpeg'>('image/webp');
+  const [targetImageFormat, setTargetImageFormat] = useState<SupportedImageFormat>('image/webp');
   const [imageQuality, setImageQuality] = useState<number>(0.85);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [result, setResult] = useState<ConversionResult | null>(null);
@@ -405,6 +425,24 @@ export function App() {
   const [isDraggingWindow, setIsDraggingWindow] = useState<boolean>(false);
   const [stripExif, setStripExif] = useState<boolean>(true);
   const dragCounter = useRef<number>(0);
+  const activeToolButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    // Keep active tool in view inside the scrollable sidebar list without scrolling the window
+    const btn = activeToolButtonRef.current;
+    const container = btn?.parentElement;
+    if (btn && container) {
+      const btnTop = btn.offsetTop;
+      const btnBottom = btnTop + btn.offsetHeight;
+      const containerTop = container.scrollTop;
+      const containerBottom = containerTop + container.clientHeight;
+      if (btnTop < containerTop) {
+        container.scrollTo({ top: btnTop, behavior: 'smooth' });
+      } else if (btnBottom > containerBottom) {
+        container.scrollTo({ top: btnBottom - container.clientHeight, behavior: 'smooth' });
+      }
+    }
+  }, [activeTool]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -422,12 +460,12 @@ export function App() {
   // Sync activeTool with URL hash, document title, and SEO meta tags
   useEffect(() => {
     if (currentToolMeta) {
-      document.title = `${currentToolMeta.title} — Multi-Converter`;
+      document.title = `${currentToolMeta.title} — Isal.in: Isalin ang lahat. Convert anything.`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
         metaDesc.setAttribute(
           'content',
-          `${currentToolMeta.shortDesc}. Fast, 100% private in-browser tool with zero server uploads.`
+          `${currentToolMeta.title}: ${currentToolMeta.shortDesc}. Isalin ang lahat. Convert anything — 100% private in-browser utility suite.`
         );
       }
       if (typeof window !== 'undefined' && window.location.hash !== `#${activeTool}`) {
@@ -495,39 +533,58 @@ export function App() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  const handleToolSelect = useCallback((toolId: ToolType) => {
-    setActiveTool(toolId);
-    setFiles([]);
-    setResult(null);
-    setBatchResults([]);
-    setErrorMsg(null);
-    setOriginalPreviewUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
-    if (toolId === 'markdown-html') {
-      const sample = `# Multi-Converter Markdown\n\nFast, **100% private** in-browser text transformation.\n\n- Zero server uploads\n- Instant live preview\n- Clean HTML export\n\n> "Security and privacy without compromise."\n\n\`\`\`javascript\nconsole.log("Hello from browser sandbox!");\n\`\`\``;
-      setTextInput(sample);
-      setTextOutput(markdownToHtml(sample));
-    } else if (toolId === 'csv-json') {
-      const sample = `id,name,role,department,active\n101,Alex Morgan,Staff Engineer,Infrastructure,true\n102,Sophia Chen,Product Lead,Growth,true\n103,David Miller,Security Analyst,SecOps,false\n104,Elena Rostova,UX Designer,Creative,true\n105,Marcus Vance,Data Scientist,Analytics,true`;
-      setTextInput(sample);
-      const parsed = parseCsv(sample, ',', true);
-      setCsvParsedResult(parsed);
-      setTextOutput(JSON.stringify(parsed.rows, null, csvIndentation));
-    } else if (toolId === 'hash-calc') {
-      const sample = 'Hello, Multi-Converter!';
-      setHashTextInput(sample);
-      computeAllHashes(sample).then(setHashResult);
-    } else if (toolId === 'unit-convert') {
-      const nowSec = Math.floor(Date.now() / 1000);
-      setTimeInputVal(String(nowSec));
-      setTimeResults(parseTimestampOrDate(nowSec));
-    } else {
-      setTextInput('');
-      setTextOutput('');
+  const handleToolSelect = useCallback((toolId: ToolType, isExplicitReset = false) => {
+    const isSameTool = toolId === activeTool && !isExplicitReset;
+    if (!isSameTool) {
+      setActiveTool(toolId);
+      setFiles([]);
+      setResult(null);
+      setBatchResults([]);
+      setErrorMsg(null);
+      setOriginalPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      if (toolId === 'markdown-html') {
+        const sample = `# Multi-Converter Markdown\n\nFast, **100% private** in-browser text transformation.\n\n- Zero server uploads\n- Instant live preview\n- Clean HTML export\n\n> "Security and privacy without compromise."\n\n\`\`\`javascript\nconsole.log("Hello from browser sandbox!");\n\`\`\``;
+        setTextInput(sample);
+        setTextOutput(markdownToHtml(sample));
+      } else if (toolId === 'csv-json') {
+        const sample = `id,name,role,department,active\n101,Alex Morgan,Staff Engineer,Infrastructure,true\n102,Sophia Chen,Product Lead,Growth,true\n103,David Miller,Security Analyst,SecOps,false\n104,Elena Rostova,UX Designer,Creative,true\n105,Marcus Vance,Data Scientist,Analytics,true`;
+        setTextInput(sample);
+        const parsed = parseCsv(sample, ',', true);
+        setCsvParsedResult(parsed);
+        setTextOutput(JSON.stringify(parsed.rows, null, csvIndentation));
+      } else if (toolId === 'hash-calc') {
+        const sample = 'Hello, Multi-Converter!';
+        setHashTextInput(sample);
+        computeAllHashes(sample).then(setHashResult);
+      } else if (toolId === 'unit-convert') {
+        const nowSec = Math.floor(Date.now() / 1000);
+        setTimeInputVal(String(nowSec));
+        setTimeResults(parseTimestampOrDate(nowSec));
+      } else {
+        setTextInput('');
+        setTextOutput('');
+      }
     }
-  }, [csvIndentation]);
+
+    // Auto-scroll to main converter workspace on mobile & tablet layout (< 1024px)
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setTimeout(() => {
+        const el = document.getElementById('tool-workspace');
+        if (el) {
+          const headerOffset = 76; // 64px sticky header + 12px margin
+          const elementPosition = el.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+          window.scrollTo({
+            top: Math.max(0, offsetPosition),
+            behavior: 'smooth',
+          });
+        }
+      }, 70);
+    }
+  }, [activeTool, csvIndentation]);
 
   const handlePaletteSelectTool = useCallback(
     (toolId: ToolType, initialInput?: string) => {
@@ -1254,6 +1311,14 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#0c0e14] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-300 relative selection:bg-amber-500/30 selection:text-amber-900 dark:selection:bg-amber-400/20 dark:selection:text-amber-200">
+      {/* Skip to Main Content Link for Keyboard and Screen Reader Accessibility */}
+      <a
+        href="#tool-workspace"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-amber-500 focus:text-neutral-950 focus:font-bold focus:rounded-xl focus:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400"
+      >
+        Skip to main converter
+      </a>
+
       {/* Background Ambient Mesh Lighting & Grid Accents */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[380px] bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent blur-3xl rounded-full dark:from-amber-500/15 dark:via-amber-400/5" />
@@ -1262,15 +1327,15 @@ export function App() {
       </div>
 
       {/* Sleek Glassmorphic Top App Bar */}
-      <header className="sticky top-0 z-30 glass-panel border-b border-neutral-200/70 dark:border-white/10 backdrop-blur-xl">
+      <header role="banner" className="sticky top-0 z-30 glass-panel border-b border-neutral-200/70 dark:border-white/10 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
             <BrandLogo size="md" showWordmark={true} />
-            <div className="hidden md:flex items-center gap-2 pl-3 border-l border-neutral-200 dark:border-neutral-800">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-neutral-100/90 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 border border-neutral-200/80 dark:border-white/10">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                client-local
+            <div className="hidden md:flex flex-col pl-3 border-l border-neutral-200 dark:border-neutral-800 leading-tight">
+              <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 italic tracking-tight">
+                "Isalin ang lahat. Convert anything."
               </span>
+              <span className="text-[10px] text-neutral-400 font-mono">100% client-side • zero upload</span>
             </div>
           </div>
 
@@ -1278,6 +1343,9 @@ export function App() {
             {/* Quick Command Palette Button (⌘K / Ctrl+K) */}
             <button
               onClick={() => setIsPaletteOpen(true)}
+              aria-label="Search tools and features (Ctrl+K or ⌘K)"
+              aria-haspopup="dialog"
+              aria-expanded={isPaletteOpen}
               className="hidden sm:inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white glass-panel border border-neutral-200/80 dark:border-white/10 hover:border-amber-500/40 transition cursor-pointer shadow-2xs"
               title="Quick tool search and switcher (Ctrl+K or ⌘K)"
             >
@@ -1291,23 +1359,45 @@ export function App() {
             {/* Mobile Search Button */}
             <button
               onClick={() => setIsPaletteOpen(true)}
+              aria-label="Open search command palette"
+              aria-haspopup="dialog"
+              aria-expanded={isPaletteOpen}
               className="sm:hidden w-9 h-9 rounded-xl border border-neutral-200/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition cursor-pointer"
-              aria-label="Search tools"
             >
               <Search className="w-4 h-4 text-neutral-400" />
             </button>
 
-            {/* History & Presets Drawer Button */}
+            {/* Desktop History & Presets Drawer Button */}
             <button
               onClick={() => setIsHistoryDrawerOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold glass-panel border border-neutral-200/80 dark:border-white/10 hover:border-amber-500/40 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white transition cursor-pointer shadow-2xs"
+              aria-label={`Open activity history (${history.length} items saved)`}
+              aria-haspopup="dialog"
+              aria-expanded={isHistoryDrawerOpen}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold glass-panel border border-neutral-200/80 dark:border-white/10 hover:border-amber-500/40 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white transition cursor-pointer shadow-2xs"
               title="Recent conversion history and quick presets"
             >
               <Clock className="w-3.5 h-3.5 text-amber-500" />
-              <span className="hidden md:inline">History</span>
+              <span>History</span>
               {history.length > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-neutral-950 text-[10px] font-bold">
                   {history.length}
+                </span>
+              )}
+            </button>
+
+            {/* Mobile History Button (matches Search and Theme Toggle) */}
+            <button
+              onClick={() => setIsHistoryDrawerOpen(true)}
+              aria-label={`Open activity history (${history.length} items saved)`}
+              aria-haspopup="dialog"
+              aria-expanded={isHistoryDrawerOpen}
+              className="sm:hidden relative w-9 h-9 rounded-xl border border-neutral-200/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:scale-105 active:scale-95 transition cursor-pointer"
+              title="Recent conversion history and quick presets"
+            >
+              <Clock className="w-4 h-4 text-amber-500" />
+              {history.length > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-amber-500 text-neutral-950 text-[9px] font-bold flex items-center justify-center shadow-xs">
+                  {history.length > 9 ? '9+' : history.length}
                 </span>
               )}
             </button>
@@ -1316,6 +1406,7 @@ export function App() {
             {installPrompt && (
               <button
                 onClick={handleInstallApp}
+                aria-label="Install Multi-Converter application on device"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 transition shadow-sm shadow-amber-500/20 active:scale-95 cursor-pointer"
                 title="Install Multi-Converter on your device"
               >
@@ -1326,7 +1417,11 @@ export function App() {
             )}
 
             {/* Zero-Upload Status Indicator */}
-            <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 shadow-xs">
+            <div
+              role="status"
+              aria-label="100% Private Sandbox: All operations execute locally in your browser"
+              className="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 shadow-xs"
+            >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -1337,7 +1432,8 @@ export function App() {
             {/* Theme Toggle Button */}
             <button
               onClick={() => setIsDark(!isDark)}
-              aria-label="Toggle Theme"
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-pressed={isDark}
               className="w-9 h-9 rounded-xl border border-neutral-200/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:scale-105 active:scale-95 transition cursor-pointer"
             >
               {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-neutral-700" />}
@@ -1345,6 +1441,13 @@ export function App() {
           </div>
         </div>
       </header>
+
+      {/* Mobile Brand Motto Subtitle Banner */}
+      <div className="md:hidden px-4 py-2 bg-gradient-to-r from-amber-500/10 via-sky-500/10 to-transparent border-b border-neutral-200/50 dark:border-white/5 text-center">
+        <p className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 italic tracking-tight">
+          "Isalin ang lahat. Convert anything."
+        </p>
+      </div>
 
       {/* Offline Status Notification Banner */}
       {!isOnline && (
@@ -1361,15 +1464,21 @@ export function App() {
       )}
 
       {/* 3.1 Header Advertisement (Subtle & Non-Intrusive) */}
-      <section className="px-4 pt-4 sm:pt-6 relative z-10">
+      <section className="px-4 pt-4 sm:pt-6 relative z-10" aria-label="Sponsor Banner">
         <AdSlot placement="header" />
       </section>
 
       {/* Main Workspace Layout */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
-        
+      <main
+        id="main-content"
+        role="main"
+        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10"
+      >
         {/* Left Column: Categorized Tool Drawer & Catalog (lg:col-span-4) */}
-        <div className="lg:col-span-4 space-y-4">
+        <aside
+          aria-label="Utility Tools Catalog"
+          className="lg:col-span-4 space-y-4 lg:sticky lg:top-20"
+        >
           {/* Category Filter */}
           <CategoryFilter
             categories={CATEGORIES}
@@ -1383,7 +1492,9 @@ export function App() {
             <Search className="w-3.5 h-3.5 text-neutral-400 group-focus-within:text-amber-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
             <input
               id="tool-search-input"
-              type="text"
+              type="search"
+              role="searchbox"
+              aria-label="Search utilities and tools"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search utilities... (Press '/' to focus)"
@@ -1393,7 +1504,7 @@ export function App() {
               {searchQuery ? (
                 <button
                   onClick={() => setSearchQuery('')}
-                  aria-label="Clear search"
+                  aria-label="Clear search input"
                   className="p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -1407,99 +1518,126 @@ export function App() {
           </div>
 
           {/* Categorized Tool Cards List */}
-          <div className="space-y-2">
-            {filteredTools.length === 0 ? (
-              <div className="p-6 text-center rounded-2xl border border-neutral-200/80 dark:border-neutral-800 glass-panel text-xs text-neutral-400">
-                No matching tools found for "{searchQuery}".
-              </div>
-            ) : (
-              filteredTools.map((tool) => {
-                const isSelected = activeTool === tool.id;
-                return (
-                  <button
-                    key={tool.id}
-                    onClick={() => handleToolSelect(tool.id)}
-                    className={`w-full text-left p-3 rounded-2xl border transition-all duration-200 flex items-center justify-between group cursor-pointer relative overflow-hidden ${
-                      isSelected
-                        ? 'glass-card border-amber-500/50 dark:border-amber-400/50 shadow-md shadow-amber-500/5 ring-1 ring-amber-500/20'
-                        : 'glass-panel border-neutral-200/70 dark:border-white/5 hover:border-neutral-300 dark:hover:border-white/20 hover:translate-x-0.5'
-                    }`}
-                  >
-                    {isSelected && (
-                      <div className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-gradient-to-b from-amber-400 to-amber-600 rounded-r-full shadow-xs" />
-                    )}
-                    <div className="flex items-center gap-3 min-w-0 flex-1 pl-1">
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${getToolCategoryColor(
-                          tool.category,
+          <div role="region" aria-label="Available Utilities" className="space-y-1.5">
+            <div className="flex items-center justify-between px-1 text-[11px] text-neutral-500 font-medium">
+              <span>Available Utilities ({filteredTools.length})</span>
+              {filteredTools.length > 5 && (
+                <span className="text-[10px] text-neutral-400 font-mono">scroll to view</span>
+              )}
+            </div>
+
+            <div className="relative group/toollist">
+              <div
+                role="list"
+                aria-label="Conversion utilities list"
+                className="space-y-2 max-h-[340px] sm:max-h-[380px] lg:max-h-[calc(100vh-310px)] overflow-y-auto pr-1 scroll-smooth"
+              >
+                {filteredTools.length === 0 ? (
+                  <div className="p-6 text-center rounded-2xl border border-neutral-200/80 dark:border-neutral-800 glass-panel text-xs text-neutral-400">
+                    No matching tools found for "{searchQuery}".
+                  </div>
+                ) : (
+                  filteredTools.map((tool) => {
+                    const isSelected = activeTool === tool.id;
+                    return (
+                      <button
+                        key={tool.id}
+                        ref={isSelected ? activeToolButtonRef : undefined}
+                        role="listitem"
+                        aria-current={isSelected ? 'page' : undefined}
+                        aria-label={`${tool.title}: ${tool.shortDesc} (${tool.badge} category)`}
+                        onClick={() => handleToolSelect(tool.id)}
+                        className={`w-full text-left p-3 rounded-2xl border transition-all duration-200 flex items-center justify-between group cursor-pointer relative overflow-hidden ${
                           isSelected
-                        )}`}
-                      >
-                        {tool.id === 'image-convert' && <FileImage className="w-4 h-4" />}
-                        {tool.id === 'images-to-pdf' && <FileText className="w-4 h-4" />}
-                        {tool.id === 'json-yaml' && <ArrowRightLeft className="w-4 h-4" />}
-                        {tool.id === 'base64' && <Code2 className="w-4 h-4" />}
-                        {tool.id === 'url-encode' && <Link className="w-4 h-4" />}
-                        {tool.id === 'uuid' && <Hash className="w-4 h-4" />}
-                        {tool.id === 'color-convert' && <Palette className="w-4 h-4" />}
-                        {tool.id === 'markdown-html' && <BookOpen className="w-4 h-4" />}
-                        {tool.id === 'csv-json' && <Table className="w-4 h-4" />}
-                        {tool.id === 'hash-calc' && <Fingerprint className="w-4 h-4" />}
-                        {tool.id === 'unit-convert' && <Ruler className="w-4 h-4" />}
-                        {tool.id === 'length-convert' && <Ruler className="w-4 h-4" />}
-                        {tool.id === 'mass-convert' && <Scale className="w-4 h-4" />}
-                        {tool.id === 'area-convert' && <Maximize2 className="w-4 h-4" />}
-                        {tool.id === 'volume-convert' && <Box className="w-4 h-4" />}
-                        {tool.id === 'temperature-convert' && <Thermometer className="w-4 h-4" />}
-                        {tool.id === 'speed-convert' && <Gauge className="w-4 h-4" />}
-                        {tool.id === 'time-convert' && <Clock className="w-4 h-4" />}
-                        {tool.id === 'number-system' && <Binary className="w-4 h-4" />}
-                        {tool.id === 'income-tax-ph' && <Coins className="w-4 h-4" />}
-                        {tool.id === 'mortgage-calc' && <Home className="w-4 h-4" />}
-                        {tool.id === 'electricity-calc' && <Zap className="w-4 h-4" />}
-                        {tool.id === 'bmi-calc' && <Heart className="w-4 h-4" />}
-                        {tool.id === 'gwa-calc' && <GraduationCap className="w-4 h-4" />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-xs sm:text-sm truncate text-neutral-950 dark:text-white">
-                            {tool.title}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
-                          {tool.shortDesc}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0 pl-1">
-                      <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-500 dark:text-neutral-400 border border-neutral-200/60 dark:border-white/5">
-                        {tool.badge}
-                      </span>
-                      <ChevronRight
-                        className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                          isSelected
-                            ? 'text-amber-500 dark:text-amber-400 translate-x-0.5'
-                            : 'text-neutral-400 opacity-30 group-hover:opacity-100 group-hover:translate-x-0.5'
+                            ? 'glass-card border-amber-500/50 dark:border-amber-400/50 shadow-md shadow-amber-500/5 ring-1 ring-amber-500/20'
+                            : 'glass-panel border-neutral-200/70 dark:border-white/5 hover:border-neutral-300 dark:hover:border-white/20 hover:translate-x-0.5'
                         }`}
-                      />
-                    </div>
-                  </button>
-                );
-              })
-            )}
+                      >
+                        {isSelected && (
+                          <div className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-gradient-to-b from-amber-400 to-amber-600 rounded-r-full shadow-xs" />
+                        )}
+                        <div className="flex items-center gap-3 min-w-0 flex-1 pl-1">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${getToolCategoryColor(
+                              tool.category,
+                              isSelected
+                            )}`}
+                          >
+                            {tool.id === 'image-convert' && <FileImage className="w-4 h-4" />}
+                            {tool.id === 'images-to-pdf' && <FileText className="w-4 h-4" />}
+                            {tool.id === 'audio-convert' && <Music className="w-4 h-4" />}
+                            {tool.id === 'video-convert' && <Video className="w-4 h-4" />}
+                            {tool.id === 'json-yaml' && <ArrowRightLeft className="w-4 h-4" />}
+                            {tool.id === 'base64' && <Code2 className="w-4 h-4" />}
+                            {tool.id === 'url-encode' && <Link className="w-4 h-4" />}
+                            {tool.id === 'uuid' && <Hash className="w-4 h-4" />}
+                            {tool.id === 'color-convert' && <Palette className="w-4 h-4" />}
+                            {tool.id === 'markdown-html' && <BookOpen className="w-4 h-4" />}
+                            {tool.id === 'csv-json' && <Table className="w-4 h-4" />}
+                            {tool.id === 'hash-calc' && <Fingerprint className="w-4 h-4" />}
+                            {tool.id === 'unit-convert' && <Ruler className="w-4 h-4" />}
+                            {tool.id === 'length-convert' && <Ruler className="w-4 h-4" />}
+                            {tool.id === 'mass-convert' && <Scale className="w-4 h-4" />}
+                            {tool.id === 'area-convert' && <Maximize2 className="w-4 h-4" />}
+                            {tool.id === 'volume-convert' && <Box className="w-4 h-4" />}
+                            {tool.id === 'temperature-convert' && <Thermometer className="w-4 h-4" />}
+                            {tool.id === 'speed-convert' && <Gauge className="w-4 h-4" />}
+                            {tool.id === 'time-convert' && <Clock className="w-4 h-4" />}
+                            {tool.id === 'number-system' && <Binary className="w-4 h-4" />}
+                            {tool.id === 'income-tax-ph' && <Coins className="w-4 h-4" />}
+                            {tool.id === 'mortgage-calc' && <Home className="w-4 h-4" />}
+                            {tool.id === 'electricity-calc' && <Zap className="w-4 h-4" />}
+                            {tool.id === 'bmi-calc' && <Heart className="w-4 h-4" />}
+                            {tool.id === 'gwa-calc' && <GraduationCap className="w-4 h-4" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-xs sm:text-sm truncate text-neutral-950 dark:text-white">
+                                {tool.title}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                              {tool.shortDesc}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0 pl-1">
+                          <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-500 dark:text-neutral-400 border border-neutral-200/60 dark:border-white/5">
+                            {tool.badge}
+                          </span>
+                          <ChevronRight
+                            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                              isSelected
+                                ? 'text-amber-500 dark:text-amber-400 translate-x-0.5'
+                                : 'text-neutral-400 opacity-30 group-hover:opacity-100 group-hover:translate-x-0.5'
+                            }`}
+                          />
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+              {/* Subtle bottom gradient fade to indicate scrollable content */}
+              <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-neutral-100/90 dark:from-[#0c0e14]/90 to-transparent rounded-b-2xl opacity-80" />
+            </div>
           </div>
 
           {/* 3.3 Sticky Sidebar Sponsor Card */}
           <div className="hidden lg:block pt-3">
             <AdSlot placement="sidebar" />
           </div>
-        </div>
+        </aside>
 
         {/* Right Column: Active Utility Workspace (lg:col-span-8) */}
         <div className="lg:col-span-8 space-y-6">
           
           {/* Active Utility Workspace Card */}
-          <div id="tool-workspace" className="glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-neutral-200/80 dark:border-white/10 relative overflow-hidden">
+          <section
+            id="tool-workspace"
+            aria-labelledby="active-tool-title"
+            className="glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-neutral-200/80 dark:border-white/10 relative overflow-hidden scroll-mt-20 sm:scroll-mt-24"
+          >
             {/* Top Specular Glow Edge */}
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/40 dark:via-amber-400/30 to-transparent pointer-events-none" />
 
@@ -1510,9 +1648,9 @@ export function App() {
                   <span className="text-[10px] uppercase font-mono font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                     {currentToolMeta.badge}
                   </span>
-                  <h2 className="text-lg sm:text-xl font-bold tracking-tight text-neutral-950 dark:text-white">
+                  <h1 id="active-tool-title" className="text-lg sm:text-xl font-bold tracking-tight text-neutral-950 dark:text-white">
                     {currentToolMeta.title}
-                  </h2>
+                  </h1>
                 </div>
                 <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
                   {currentToolMeta.shortDesc}
@@ -1523,6 +1661,7 @@ export function App() {
                 <button
                   onClick={handleShareTool}
                   title="Copy direct URL to this specific tool"
+                  aria-label={`Copy direct link to ${currentToolMeta.title}`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white rounded-xl transition glass-panel hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
                 >
                   {linkCopied ? (
@@ -1539,8 +1678,9 @@ export function App() {
                 </button>
 
                 <button
-                  onClick={() => handleToolSelect(activeTool)}
+                  onClick={() => handleToolSelect(activeTool, true)}
                   title="Reset workspace state"
+                  aria-label={`Reset ${currentToolMeta.title} workspace state`}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white rounded-xl transition glass-panel hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
@@ -1551,7 +1691,7 @@ export function App() {
 
             {/* Error Message Alert */}
             {errorMsg && (
-              <div className="mt-4 flex items-center gap-2.5 p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-300 rounded-xl text-xs sm:text-sm">
+              <div role="alert" aria-live="assertive" className="mt-4 flex items-center gap-2.5 p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-300 rounded-xl text-xs sm:text-sm">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -1635,8 +1775,12 @@ export function App() {
                         className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 outline-none focus:border-neutral-900 dark:focus:border-neutral-100"
                       >
                         <option value="image/webp">WebP (Optimized / Lightest)</option>
-                        <option value="image/png">PNG (Lossless)</option>
-                        <option value="image/jpeg">JPEG (Standard Photo)</option>
+                        <option value="image/png">PNG (Lossless 32-bit)</option>
+                        <option value="image/jpeg">JPEG / JPG (Standard Photo)</option>
+                        <option value="image/avif">AVIF (Next-Gen Open Media)</option>
+                        <option value="image/bmp">BMP (Uncompressed Bitmap)</option>
+                        <option value="image/x-icon">ICO (Windows & Web Favicon)</option>
+                        <option value="image/gif">GIF (Graphics Interchange)</option>
                       </select>
                     </div>
 
@@ -3257,6 +3401,7 @@ export function App() {
               activeTool === 'time-convert') && (
               <div className="space-y-6">
                 <UnitConverterTool
+                  key={activeTool}
                   initialCategory={
                     activeTool === 'length-convert'
                       ? 'length'
@@ -3272,6 +3417,20 @@ export function App() {
                       ? 'speed'
                       : 'time'
                   }
+                  onCategoryChange={(cat) => {
+                    const toolMap: Record<string, ToolType> = {
+                      length: 'length-convert',
+                      mass: 'mass-convert',
+                      area: 'area-convert',
+                      volume: 'volume-convert',
+                      temperature: 'temperature-convert',
+                      speed: 'speed-convert',
+                      time: 'time-convert',
+                    };
+                    if (toolMap[cat]) {
+                      handleToolSelect(toolMap[cat]);
+                    }
+                  }}
                 />
                 <AdSlot placement="post-conversion" />
               </div>
@@ -3324,7 +3483,23 @@ export function App() {
                 <AdSlot placement="post-conversion" />
               </div>
             )}
-          </div>
+
+            {/* 2.19 Audio Converter & Extractor */}
+            {activeTool === 'audio-convert' && (
+              <div className="space-y-6">
+                <AudioConverterTool />
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+
+            {/* 2.20 Video Converter & Transcoder */}
+            {activeTool === 'video-convert' && (
+              <div className="space-y-6">
+                <VideoConverterTool />
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+          </section>
 
           {/* 3.2 In-Feed Section Sponsor */}
           <AdSlot placement="between-content" />
@@ -3357,24 +3532,39 @@ export function App() {
       </main>
 
       {/* Minimalist Glass Footer */}
-      <footer className="border-t border-neutral-200/60 dark:border-white/10 glass-panel py-6 px-4 text-center text-xs text-neutral-400 dark:text-neutral-500 mt-auto relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
+      <footer role="contentinfo" className="border-t border-neutral-200/60 dark:border-white/10 glass-panel py-8 px-4 text-xs text-neutral-500 dark:text-neutral-400 mt-auto relative z-10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
             <BrandLogo size="sm" showWordmark={true} />
-            <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
-            <span className="hidden sm:inline font-mono text-[11px] text-neutral-400 dark:text-neutral-500">
-              Zero-Upload Developer Suite
+            <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
+            <span className="font-medium text-neutral-700 dark:text-neutral-300">
+              Isalin ang lahat. Convert anything.
+            </span>
+            <span className="hidden md:inline text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
+            <span className="hidden md:inline font-mono text-[11px] text-neutral-400 dark:text-neutral-500">
+              Zero-Upload Developer & Philippine Utility Suite
             </span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+            <a
+              href="mailto:crischarlesgarcia345@gmail.com?subject=Isal.in%20Suggestion%20or%20Issue%20Report&body=Hi!%20I%20have%20a%20suggestion%20or%20would%20like%20to%20report%20an%20issue%20with%20Isal.in:%0A%0A-%20Tool%20/%20Category:%0A-%20Details:%0A"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-semibold transition cursor-pointer hover:scale-105 active:scale-95 shadow-2xs"
+              aria-label="Send suggestion or report an issue via email to crischarlesgarcia345@gmail.com"
+              title="Have a suggestion or found an issue? Send us an email!"
+            >
+              <Mail className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Suggestions / Issues</span>
+            </a>
+            <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
             <span className="inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
               Ethical Ads • No Tracking
             </span>
-            <span className="text-neutral-300 dark:text-neutral-700">•</span>
+            <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
             <button
               onClick={() => setIsPrivacyOpen(true)}
               className="text-neutral-700 dark:text-neutral-300 hover:text-amber-500 dark:hover:text-amber-400 font-medium transition cursor-pointer"
+              aria-haspopup="dialog"
             >
               Privacy Policy
             </button>

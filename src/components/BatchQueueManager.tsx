@@ -12,6 +12,7 @@ import {
   FileCheck,
 } from 'lucide-react';
 import type { ConversionResult } from '../services/conversionService';
+import type { SupportedImageFormat } from '../services/imageFormatsService';
 
 export interface BatchQueueManagerProps {
   files: File[];
@@ -19,8 +20,8 @@ export interface BatchQueueManagerProps {
   onClearFiles: () => void;
   onAddFiles: (files: File[]) => void;
   onReorderFiles?: (fromIndex: number, toIndex: number) => void;
-  targetFormat: 'image/webp' | 'image/png' | 'image/jpeg';
-  onTargetFormatChange?: (format: 'image/webp' | 'image/png' | 'image/jpeg') => void;
+  targetFormat: SupportedImageFormat;
+  onTargetFormatChange?: (format: SupportedImageFormat) => void;
   isProcessing: boolean;
   batchResults: ConversionResult[];
   selectedResultIndex: number;
@@ -125,21 +126,24 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
         {/* Global Format Selector (Quick Switcher) */}
         <div className="flex items-center gap-2">
           {mode === 'image-convert' && onTargetFormatChange && (
-            <div className="inline-flex rounded-xl glass-panel p-0.5 text-xs border border-neutral-200/80 dark:border-white/5">
-              {(['image/webp', 'image/png', 'image/jpeg'] as const).map((fmt) => (
-                <button
-                  key={fmt}
-                  type="button"
-                  onClick={() => onTargetFormatChange(fmt)}
-                  className={`px-2.5 py-1 rounded-lg font-semibold text-[11px] transition cursor-pointer ${
-                    targetFormat === fmt
-                      ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
-                      : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-                  }`}
-                >
-                  {fmt.split('/')[1].toUpperCase()}
-                </button>
-              ))}
+            <div className="inline-flex flex-wrap rounded-xl glass-panel p-0.5 text-xs border border-neutral-200/80 dark:border-white/5">
+              {(['image/webp', 'image/png', 'image/jpeg', 'image/avif', 'image/bmp', 'image/x-icon', 'image/gif'] as const).map((fmt) => {
+                const label = fmt === 'image/x-icon' ? 'ICO' : fmt === 'image/jpeg' ? 'JPG' : fmt.split('/')[1].toUpperCase();
+                return (
+                  <button
+                    key={fmt}
+                    type="button"
+                    onClick={() => onTargetFormatChange(fmt)}
+                    className={`px-2 py-1 rounded-lg font-semibold text-[10px] sm:text-[11px] transition cursor-pointer ${
+                      targetFormat === fmt
+                        ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
+                        : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           )}
 
