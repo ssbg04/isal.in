@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ArrowRightLeft,
   Copy,
@@ -18,12 +18,15 @@ import {
   ChevronDown,
   ChevronUp,
   ShieldCheck,
+  Share2,
 } from 'lucide-react';
 import {
   type UnitCategory,
   CATEGORY_UNIT_MAP,
   convertUnitToAll,
 } from '../../services/unitConversionService';
+import { evaluateMathExpression } from '../../utils/mathEvaluator';
+import { SearchableUnitSelect } from '../common/SearchableUnitSelect';
 
 const CATEGORY_TABS: { id: UnitCategory; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: 'length', label: 'Length', icon: Ruler },
@@ -112,6 +115,68 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
 
   const units = useMemo(() => CATEGORY_UNIT_MAP[activeCategory] || [], [activeCategory]);
 
+  // Hydrate state from URL query parameters (e.g. #length-convert?from=m&to=ft&v=10)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.location.hash) return;
+    const hashParts = window.location.hash.split('?');
+    if (hashParts.length > 1) {
+      const searchParams = new URLSearchParams(hashParts[1]);
+      const fromParam = searchParams.get('from');
+      const toParam = searchParams.get('to');
+      const vParam = searchParams.get('v');
+      const pParam = searchParams.get('p');
+
+      const currentUnits = CATEGORY_UNIT_MAP[activeCategory] || [];
+      if (fromParam && currentUnits.some((u) => u.id === fromParam)) {
+        setFromUnitId(fromParam);
+      }
+      if (toParam && currentUnits.some((u) => u.id === toParam)) {
+        setToUnitId(toParam);
+      }
+      if (vParam) {
+        setInputValue(vParam);
+      }
+      if (pParam) {
+        const pNum = parseInt(pParam, 10);
+        if ([2, 4, 6].includes(pNum)) setPrecision(pNum);
+      }
+    }
+  }, [activeCategory]);
+
+  // Sync state to URL hash
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const toolIdMap: Record<UnitCategory, string> = {
+      length: 'length-convert',
+      mass: 'mass-convert',
+      area: 'area-convert',
+      volume: 'volume-convert',
+      temperature: 'temperature-convert',
+      speed: 'speed-convert',
+      time: 'time-convert',
+    };
+    const toolId = toolIdMap[activeCategory] || 'unit-convert';
+    const params = new URLSearchParams();
+    if (fromUnitId) params.set('from', fromUnitId);
+    if (toUnitId) params.set('to', toUnitId);
+    if (inputValue && inputValue !== '1') params.set('v', inputValue);
+    if (precision !== 4) params.set('p', precision.toString());
+
+    const qs = params.toString();
+    const newHash = `#${toolId}${qs ? `?${qs}` : ''}`;
+    if (window.location.hash !== newHash) {
+      window.history.replaceState(null, '', newHash);
+    }
+  }, [activeCategory, fromUnitId, toUnitId, inputValue, precision]);
+
+  const handleShareLink = () => {
+    if (typeof window === 'undefined') return;
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    setCopiedId('share-url');
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const handleCategoryChange = (cat: UnitCategory) => {
     setActiveCategory(cat);
     const newUnits = CATEGORY_UNIT_MAP[cat] || [];
@@ -122,10 +187,16 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
     onCategoryChange?.(cat);
   };
 
+  // Inline safe arithmetic evaluation
+  const mathResult = useMemo(() => evaluateMathExpression(inputValue), [inputValue]);
+
   const numValue = useMemo(() => {
+    if (mathResult.isValid && mathResult.value !== null) {
+      return mathResult.value;
+    }
     const parsed = parseFloat(inputValue);
     return isNaN(parsed) ? 0 : parsed;
-  }, [inputValue]);
+  }, [inputValue, mathResult]);
 
   // All conversions
   const allConversions = useMemo(() => {
@@ -156,6 +227,18 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
       return updated;
     });
   };
+
+  const recentFromUnitIds = useMemo(() => {
+    return recentPairs
+      .filter((p) => p.category === activeCategory)
+      .map((p) => p.from);
+  }, [recentPairs, activeCategory]);
+
+  const recentToUnitIds = useMemo(() => {
+    return recentPairs
+      .filter((p) => p.category === activeCategory)
+      .map((p) => p.to);
+  }, [recentPairs, activeCategory]);
 
   const handleSwapUnits = () => {
     setIsSwapping((prev) => !prev);
@@ -198,9 +281,9 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
             <button
               key={tab.id}
               onClick={() => handleCategoryChange(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition cursor-pointer focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none ${
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none ${
                 isActive
-                  ? 'bg-sky-500 text-neutral-950 shadow-sm shadow-sky-500/25'
+                  ? 'bg-amber-500 text-neutral-950 shadow-sm shadow-amber-500/25 font-bold'
                   : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800/60'
               }`}
             >
@@ -224,10 +307,10 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
                 key={pair.label}
                 type="button"
                 onClick={() => applyPair(pair.from, pair.to)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium transition cursor-pointer border focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:outline-none ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium transition cursor-pointer border focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none ${
                   isMatch
-                    ? 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/40 shadow-xs'
-                    : 'glass-panel border-neutral-200 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:border-sky-500/40 hover:text-sky-600 dark:hover:text-sky-400'
+                    ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-500/40 shadow-xs font-bold'
+                    : 'glass-panel border-neutral-200 dark:border-white/10 text-neutral-700 dark:text-neutral-300 hover:border-amber-500/40 hover:text-amber-600 dark:hover:text-amber-400'
                 }`}
               >
                 {pair.label}
@@ -261,8 +344,8 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
 
       {/* Main Dual-Panel Interactive Converter with Straddling Swap Button */}
       <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 items-stretch">
-        {/* 1. INPUT PANEL ("From") — Elevated Clean Surface */}
-        <div className="p-5 sm:p-6 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/[0.08] shadow-sm focus-within:ring-2 focus-within:ring-amber-500/30 transition-all flex flex-col justify-between">
+        {/* Layer 1: INPUT PANEL ("From") — Elevated Clean Surface */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#171a24] border border-neutral-200/90 dark:border-white/[0.08] dark:border-t-white/[0.16] shadow-sm focus-within:ring-2 focus-within:ring-amber-500/30 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-200/70 dark:border-white/10 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-1.5 uppercase font-mono tracking-wider text-[11px] text-neutral-600 dark:text-neutral-400 font-bold">
@@ -291,18 +374,28 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
               </div>
             </div>
 
-            {/* Input row */}
+            {/* Input row with Inline Math Evaluation Preview */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
+              <div className="relative">
                 <input
                   type="text"
-                  inputMode="decimal"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="0"
-                  aria-label="Value to convert"
-                  className="w-full bg-neutral-50 dark:bg-[#0c0e15] border border-neutral-300 dark:border-white/10 rounded-xl px-4 py-3 text-neutral-950 dark:text-white text-xl sm:text-2xl font-mono tabular-nums font-semibold outline-none focus:border-amber-500 transition-colors"
+                  placeholder="0 (e.g. 100 * 1.12)"
+                  aria-label="Value or math expression to convert"
+                  className="w-full bg-neutral-50 dark:bg-[#11131a] border border-neutral-300 dark:border-white/10 rounded-xl px-4 py-3 text-neutral-950 dark:text-white text-xl sm:text-2xl font-mono tabular-nums font-semibold outline-none focus:border-amber-500 transition-colors shadow-[inset_0_1px_2px_rgba(0,0,0,0.06)] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)]"
                 />
+                {mathResult.isExpression && mathResult.isValid && (
+                  <button
+                    type="button"
+                    onClick={() => mathResult.value !== null && setInputValue(mathResult.value.toString())}
+                    title="Click to apply calculated result into input"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 text-xs font-mono font-bold transition cursor-pointer shadow-xs active:scale-95"
+                  >
+                    <span>= {mathResult.formattedPreview}</span>
+                    <span className="text-[10px] uppercase font-sans font-bold text-amber-700 dark:text-amber-400 bg-amber-500/20 px-1 py-0.5 rounded">Apply</span>
+                  </button>
+                )}
               </div>
 
               {/* Unit Selector */}
@@ -310,20 +403,17 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
                 <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 mb-1 block">
                   Select Base Unit:
                 </label>
-                <select
+                <SearchableUnitSelect
                   value={fromUnitId}
-                  onChange={(e) => {
-                    setFromUnitId(e.target.value);
-                    recordRecentPair(activeCategory, e.target.value, toUnitId);
+                  options={units}
+                  recentUnitIds={recentFromUnitIds}
+                  ariaLabel="Select base unit"
+                  placeholder={`Search ${activeCategory} units (e.g. ${units[0]?.symbol || 'm'})...`}
+                  onChange={(newId) => {
+                    setFromUnitId(newId);
+                    recordRecentPair(activeCategory, newId, toUnitId);
                   }}
-                  className="w-full bg-neutral-50 dark:bg-[#0c0e15] border border-neutral-300 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-neutral-900 dark:text-neutral-100 text-sm font-semibold outline-none focus:border-amber-500 cursor-pointer transition-colors"
-                >
-                  {units.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.symbol} — {u.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
           </div>
@@ -351,7 +441,7 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
             onClick={handleSwapUnits}
             title="Swap input and output units"
             aria-label="Swap units"
-            className="w-11 h-11 rounded-2xl bg-white dark:bg-[#12141c] hover:bg-amber-500 hover:text-neutral-950 dark:hover:bg-amber-500 dark:hover:text-neutral-950 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-white/10 shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+            className="w-11 h-11 rounded-2xl bg-white dark:bg-[#171a24] hover:bg-amber-500 hover:text-neutral-950 dark:hover:bg-amber-500 dark:hover:text-neutral-950 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-white/10 shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
           >
             <ArrowRightLeft
               className="w-5 h-5 transition-transform duration-300"
@@ -360,8 +450,8 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
           </button>
         </div>
 
-        {/* 2. OUTPUT PANEL ("To") — Quiet Recessed Obsidian Surface + Golden Sun Target Accent */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-neutral-100/70 dark:bg-[#0c0e15] border border-neutral-200/80 dark:border-white/[0.08] shadow-inner flex flex-col justify-between">
+        {/* Layer 3: OUTPUT PANEL ("To") — Quiet Recessed Obsidian Surface + Golden Sun Target Accent */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-neutral-100/70 dark:bg-[#0d0f15] border border-neutral-200/80 dark:border-white/[0.06] shadow-inner flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-200/60 dark:border-white/5 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
               <span className="flex items-center gap-1.5 uppercase font-mono tracking-wider text-[11px] text-amber-700 dark:text-amber-400 font-bold">
@@ -377,17 +467,30 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
               </button>
             </div>
 
-            {/* Readout Output Display */}
+            {/* Readout Output Display — One-Tap Whole Box Click-to-Copy */}
             <div className="space-y-3">
               <div
                 onClick={() => directTarget && handleCopy(directTarget.formatted, 'direct')}
-                title="Click to copy result"
-                className="w-full bg-white dark:bg-[#12141c] border border-amber-500/40 rounded-xl px-4 py-3 text-neutral-950 dark:text-white text-2xl sm:text-3xl font-mono tabular-nums font-extrabold select-all flex items-center justify-between cursor-pointer hover:border-amber-500 transition shadow-xs"
+                title="Click anywhere to copy result"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    directTarget && handleCopy(directTarget.formatted, 'direct');
+                  }
+                }}
+                className="group/readout w-full bg-white dark:bg-[#12141a] border border-amber-500/40 hover:border-amber-500 rounded-xl px-4 py-3.5 text-neutral-950 dark:text-white text-2xl sm:text-3xl font-mono tabular-nums font-extrabold select-all flex items-center justify-between cursor-pointer transition shadow-xs relative focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
               >
                 <span className="truncate">{directTarget ? directTarget.formatted : '0'}</span>
-                <span className="text-sm font-sans font-bold text-amber-600 dark:text-amber-400 shrink-0 pl-2">
-                  {directTarget?.symbol}
-                </span>
+                <div className="flex items-center gap-2 shrink-0 pl-2">
+                  <span className="text-sm font-sans font-bold text-amber-600 dark:text-amber-400">
+                    {directTarget?.symbol}
+                  </span>
+                  <span className="opacity-0 group-hover/readout:opacity-100 transition-opacity text-[11px] font-sans font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    {copiedId === 'direct' ? 'Copied!' : 'Click to copy'}
+                  </span>
+                </div>
               </div>
 
               {/* Target Unit Selector */}
@@ -395,32 +498,40 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
                 <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400 mb-1 block">
                   Select Target Unit:
                 </label>
-                <select
+                <SearchableUnitSelect
                   value={toUnitId}
-                  onChange={(e) => {
-                    setToUnitId(e.target.value);
-                    recordRecentPair(activeCategory, fromUnitId, e.target.value);
+                  options={units}
+                  recentUnitIds={recentToUnitIds}
+                  ariaLabel="Select target unit"
+                  placeholder={`Search target units (e.g. ${units[1]?.symbol || units[0]?.symbol || 'ft'})...`}
+                  onChange={(newId) => {
+                    setToUnitId(newId);
+                    recordRecentPair(activeCategory, fromUnitId, newId);
                   }}
-                  className="w-full bg-white dark:bg-[#12141c] border border-neutral-300 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-neutral-900 dark:text-neutral-100 text-sm font-semibold outline-none focus:border-amber-500 cursor-pointer transition-colors"
-                >
-                  {units.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.symbol} — {u.name}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
           </div>
 
-          {/* Equation summary */}
-          <div className="pt-4 mt-4 border-t border-neutral-200/60 dark:border-white/5 text-xs text-neutral-600 dark:text-neutral-400 flex items-center justify-between">
+          {/* Equation summary with Shareable Link Button */}
+          <div className="pt-4 mt-4 border-t border-neutral-200/60 dark:border-white/5 text-xs text-neutral-600 dark:text-neutral-400 flex items-center justify-between gap-2">
             <span className="font-mono text-[11px] truncate">
-              {numValue} {fromUnitDef?.symbol} ={' '}
+              {mathResult.isExpression && mathResult.isValid ? `(${inputValue})` : numValue} {fromUnitDef?.symbol} ={' '}
               <strong className="text-neutral-900 dark:text-white font-bold">{directTarget?.formatted}</strong>{' '}
               {directTarget?.symbol}
             </span>
-            <span className="text-[10px] text-neutral-500 font-mono">1:1 Direct</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleShareLink}
+                title="Copy shareable URL link for this conversion"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-amber-600 dark:hover:text-amber-400 transition cursor-pointer text-[11px] font-medium"
+              >
+                {copiedId === 'share-url' ? <Check className="w-3 h-3 text-amber-500" /> : <Share2 className="w-3 h-3" />}
+                <span>{copiedId === 'share-url' ? 'Link Copied!' : 'Share'}</span>
+              </button>
+              <span className="text-[10px] text-neutral-500 font-mono hidden sm:inline">• 1:1 Direct</span>
+            </div>
           </div>
         </div>
       </div>
@@ -430,9 +541,9 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
         <button
           type="button"
           onClick={() => setShowCompareAll((prev) => !prev)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-panel border border-neutral-300 dark:border-white/10 hover:border-sky-500/50 text-neutral-800 dark:text-neutral-200 font-semibold cursor-pointer transition"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-panel border border-neutral-300 dark:border-white/10 hover:border-amber-500/50 text-neutral-800 dark:text-neutral-200 font-semibold cursor-pointer transition"
         >
-          <Grid3X3 className="w-3.5 h-3.5 text-sky-500" />
+          <Grid3X3 className="w-3.5 h-3.5 text-amber-500" />
           <span>Compare All Units ({allConversions.length})</span>
           {showCompareAll ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
@@ -446,11 +557,11 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
               onClick={() => setPrecision(p)}
               className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-colors cursor-pointer ${
                 precision === p
-                  ? 'bg-sky-500 text-neutral-950 font-bold shadow-2xs'
+                  ? 'bg-amber-500 text-neutral-950 font-bold shadow-2xs'
                   : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
               }`}
             >
-              {p}
+              {p}d
             </button>
           ))}
         </div>
@@ -461,7 +572,7 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
         <div className="space-y-3 pt-2 animate-in fade-in duration-200">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-sky-500" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
               <span>Multi-Unit Comparison Matrix</span>
             </h4>
             <span className="text-[11px] text-neutral-500 font-mono">

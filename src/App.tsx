@@ -330,7 +330,7 @@ export function App() {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [activeTool, setActiveTool] = useState<ToolType>(() => {
     if (typeof window !== 'undefined' && window.location.hash) {
-      const hash = window.location.hash.replace('#', '') as ToolType;
+      const hash = window.location.hash.replace('#', '').split('?')[0] as ToolType;
       if (TOOLS.some((t) => t.id === hash)) {
         return hash;
       }
@@ -341,7 +341,7 @@ export function App() {
   // Current view mode: 'home' for dedicated discovery landing, 'tool' for converter workspace
   const [viewMode, setViewMode] = useState<'home' | 'tool'>(() => {
     if (typeof window !== 'undefined' && window.location.hash) {
-      const hash = window.location.hash.replace('#', '') as ToolType;
+      const hash = window.location.hash.replace('#', '').split('?')[0] as ToolType;
       if (TOOLS.some((t) => t.id === hash)) {
         return 'tool';
       }
@@ -509,7 +509,7 @@ export function App() {
         setViewMode('home');
         return;
       }
-      const hash = rawHash as ToolType;
+      const hash = rawHash.split('?')[0] as ToolType;
       if (TOOLS.some((t) => t.id === hash)) {
         setActiveTool(hash);
         setViewMode('tool');
