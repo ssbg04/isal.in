@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mc-cache-v2';
+const CACHE_NAME = 'mc-cache-v6';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',

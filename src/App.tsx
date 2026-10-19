@@ -14,7 +14,6 @@ import {
   Sun,
   Moon,
   Shield,
-  Layers,
   ChevronRight,
   RotateCcw,
   Share2,
@@ -35,6 +34,7 @@ import {
 import { AdSlot } from './components/AdSlot';
 import { CategoryFilter } from './components/CategoryFilter';
 import { PrivacyModal } from './components/PrivacyModal';
+import { BrandLogo } from './components/BrandLogo';
 import type {
   ToolType,
   ConversionResult,
@@ -276,6 +276,10 @@ export function App() {
       if (typeof window !== 'undefined' && window.location.hash !== `#${activeTool}`) {
         window.history.replaceState(null, '', `#${activeTool}`);
       }
+    }
+    const favLink = document.querySelector<HTMLLinkElement>("link[rel*='icon']");
+    if (favLink && !favLink.href.includes('v=6')) {
+      favLink.href = '/favicon.svg?v=6';
     }
   }, [activeTool, currentToolMeta]);
 
@@ -675,17 +679,10 @@ export function App() {
       <header className="border-b border-neutral-200/80 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center text-white dark:text-neutral-900">
-              <Layers className="w-4 h-4 stroke-[2.2]" />
-            </div>
-            <div>
-              <span className="font-semibold tracking-tight text-sm sm:text-base text-neutral-950 dark:text-neutral-50">
-                Multi-Converter
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-xs text-neutral-400 dark:text-neutral-500 font-mono">
-                client-local
-              </span>
-            </div>
+            <BrandLogo size="md" showWordmark={true} />
+            <span className="hidden md:inline-block text-xs text-neutral-400 dark:text-neutral-500 font-mono border-l border-neutral-200 dark:border-neutral-800 pl-3 py-0.5">
+              client-local
+            </span>
           </div>
 
           <div className="flex items-center gap-2.5 sm:gap-3">
@@ -2644,7 +2641,11 @@ export function App() {
       {/* Minimal Footer */}
       <footer className="border-t border-neutral-200/60 dark:border-neutral-800/60 py-6 px-4 text-center text-xs text-neutral-400 dark:text-neutral-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span>Multi-Converter • Client-Side Utility Platform</span>
+          <div className="flex items-center gap-2">
+            <BrandLogo size="sm" showWordmark={true} />
+            <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
+            <span className="hidden sm:inline">Client-Side Utility Platform</span>
+          </div>
           <div className="flex items-center gap-4">
             <span>Ethical Ads • No Tracking</span>
             <button
