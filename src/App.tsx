@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   FileImage,
   FileText,
@@ -38,6 +38,11 @@ import { BrandLogo } from './components/BrandLogo';
 import { ImageCompareSlider } from './components/ImageCompareSlider';
 import { DualPaneCodeWorkspace } from './components/DualPaneCodeWorkspace';
 import { CommandPalette } from './components/CommandPalette';
+import {
+  HistoryPresetsDrawer,
+  type HistoryItem,
+  type PresetWorkflow,
+} from './components/HistoryPresetsDrawer';
 import type {
   ToolType,
   ConversionResult,
@@ -256,6 +261,23 @@ export function App() {
   const [unitCopiedKey, setUnitCopiedKey] = useState<string | null>(null);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState<boolean>(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState<boolean>(false);
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState<boolean>(false);
+  const [history, setHistory] = useState<HistoryItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('mc_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mc_history', JSON.stringify(history.slice(0, 20)));
+    } catch {
+      // Ignore quota errors
+    }
+  }, [history]);
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
   const [isOnline, setIsOnline] = useState<boolean>(() =>
     typeof navigator !== 'undefined' ? navigator.onLine : true
@@ -409,6 +431,133 @@ export function App() {
     [handleToolSelect]
   );
 
+  const addHistoryItem = useCallback((item: Omit<HistoryItem, 'id' | 'timestamp'>) => {
+    setHistory((prev) => [
+      {
+        ...item,
+        id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        timestamp: Date.now(),
+      },
+      ...prev.slice(0, 19),
+    ]);
+  }, []);
+
+  const handleRestoreHistory = useCallback(
+    (item: HistoryItem) => {
+      handleToolSelect(item.toolId);
+      if (item.inputContent) setTextInput(item.inputContent);
+      if (item.outputContent) setTextOutput(item.outputContent);
+      if (item.toolId === 'color-convert' && item.inputContent) {
+        setColorInput(item.inputContent);
+        setColorData(parseColor(item.inputContent));
+      } else if (item.toolId === 'hash-calc' && item.inputContent) {
+        setHashTextInput(item.inputContent);
+        computeAllHashes(item.inputContent).then(setHashResult);
+      }
+      setTimeout(() => {
+        document.getElementById('tool-workspace')?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    },
+    [handleToolSelect]
+  );
+
+  const PRESETS: PresetWorkflow[] = useMemo(
+    () => [
+      {
+        id: 'web-ready-webp',
+        title: 'Web-Ready WebP (85% Quality)',
+        toolId: 'image-convert',
+        description: 'Modern web image format with smart compression for 70%+ smaller file sizes.',
+        badge: 'WebP',
+        iconType: 'media',
+        apply: () => {
+          handleToolSelect('image-convert');
+          setTargetImageFormat('image/webp');
+          setImageQuality(0.85);
+          setTimeout(() => document.getElementById('tool-workspace')?.scrollIntoView({ behavior: 'smooth' }), 50);
+        },
+      },
+      {
+        id: 'crisp-png',
+        title: 'Lossless High-Res PNG',
+        toolId: 'image-convert',
+        description: 'Pixel-perfect lossless conversion ideal for diagrams, UI icons, and logos.',
+        badge: 'PNG',
+        iconType: 'media',
+        apply: () => {
+          handleToolSelect('image-convert');
+          setTargetImageFormat('image/png');
+          setImageQuality(1.0);
+          setTimeout(() => document.getElementById('tool-workspace')?.scrollIntoView({ behavior: 'smooth' }), 50);
+        },
+      },
+      {
+        id: 'json-beautify',
+        title: 'JSON ⇄ YAML Config Transformer',
+        toolId: 'json-yaml',
+        description: 'Clean bi-directional schema conversion with syntax verification and live preview.',
+        badge: 'Config',
+        iconType: 'code',
+        apply: () => {
+          handleToolSelect('json-yaml');
+          setJsonDirection('json-to-yaml');
+          const sample = `{\n  "name": "production-api",\n  "version": "1.0.0",\n  "server": {\n    "host": "0.0.0.0",\n    "port": 8080,\n    "ssl": true\n  }\n}`;
+          setTextInput(sample);
+          convertJsonYaml(sample, 'json-to-yaml').then(setTextOutput).catch(() => {});
+          setTimeout(() => document.getElementById('tool-workspace')?.scrollIntoView({ behavior: 'smooth' }), 50);
+        },
+      },
+      {
+        id: 'safe-base64',
+        title: 'Base64 Safe String Encoding',
+        toolId: 'base64',
+        description: 'ASCII string to Base64 encode for secure header payloads and storage tokens.',
+        badge: 'Security',
+        iconType: 'code',
+        apply: () => {
+          handleToolSelect('base64');
+          setBase64Mode('encode');
+          const sample = 'Multi-Converter Client-Side Production Token';
+          setTextInput(sample);
+          setTextOutput(processBase64(sample, 'encode'));
+          setTimeout(() => document.getElementById('tool-workspace')?.scrollIntoView({ behavior: 'smooth' }), 50);
+        },
+      },
+      {
+        id: 'uuid-batch-10',
+        title: 'Batch 10 UUID v4 Identifiers',
+        toolId: 'uuid',
+        description: 'Generate 10 cryptographically random RFC 4122 v4 tokens ready to copy.',
+        badge: 'Crypto',
+        iconType: 'utility',
+        apply: () => {
+          handleToolSelect('uuid');
+          setUuidCount(10);
+          const uuids = generateUUIDs(10);
+          setTextOutput(uuids.join('\n'));
+          setTimeout(() => document.getElementById('tool-workspace')?.scrollIntoView({ behavior: 'smooth' }), 50);
+        },
+      },
+      {
+        id: 'css-rem-scale',
+        title: 'CSS px ⇄ rem Fluid Typography',
+        toolId: 'unit-convert',
+        description: 'Convert pixels to rem using standard 16px root font size for responsive styling.',
+        badge: 'CSS',
+        iconType: 'utility',
+        apply: () => {
+          handleToolSelect('unit-convert');
+          setUnitCategory('css');
+          setCssPx(24);
+          setCssBaseSize(16);
+          setCssResults(convertCssUnits(24, 'px', 16));
+          setTimeout(() => document.getElementById('tool-workspace')?.scrollIntoView({ behavior: 'smooth' }), 50);
+        },
+      },
+    ],
+    [handleToolSelect]
+  );
+
   // Global ⌘K / Ctrl+K Command Palette Shortcut Listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -522,30 +671,95 @@ export function App() {
         }
         setBatchResults(convertedItems);
         setResult(convertedItems[0]);
+        if (convertedItems[0]) {
+          const sizeKb = convertedItems[0].sizeBytes ? `${(convertedItems[0].sizeBytes / 1024).toFixed(1)} KB` : '';
+          addHistoryItem({
+            toolId: 'image-convert',
+            toolTitle: 'Image Converter',
+            badge: targetImageFormat.replace('image/', '').toUpperCase(),
+            summary: `${files[0].name} → ${convertedItems[0].filename}`,
+            details: sizeKb ? `${sizeKb} output size` : undefined,
+          });
+        }
       } else if (activeTool === 'images-to-pdf') {
         if (!files.length) throw new Error('Select at least one image to compile.');
         const res = await convertImagesToPdf(files);
         setResult(res);
         setBatchResults([res]);
+        const pdfKb = res.sizeBytes ? `${(res.sizeBytes / 1024).toFixed(1)} KB` : '';
+        addHistoryItem({
+          toolId: 'images-to-pdf',
+          toolTitle: 'Images to PDF',
+          badge: 'PDF',
+          summary: `${files.length} images compiled to ${res.filename}`,
+          details: pdfKb ? `${pdfKb} output size` : undefined,
+        });
       } else if (activeTool === 'json-yaml') {
         const out = await convertJsonYaml(textInput, jsonDirection);
         setTextOutput(out);
+        addHistoryItem({
+          toolId: 'json-yaml',
+          toolTitle: 'JSON ⇄ YAML',
+          badge: jsonDirection === 'json-to-yaml' ? 'YAML' : 'JSON',
+          summary: textInput.slice(0, 60),
+          inputContent: textInput,
+          outputContent: out,
+        });
       } else if (activeTool === 'base64') {
         const out = processBase64(textInput, base64Mode);
         setTextOutput(out);
+        addHistoryItem({
+          toolId: 'base64',
+          toolTitle: 'Base64',
+          badge: base64Mode === 'encode' ? 'ENCODE' : 'DECODE',
+          summary: textInput.slice(0, 60),
+          inputContent: textInput,
+          outputContent: out,
+        });
       } else if (activeTool === 'url-encode') {
         const out = processUrlEncode(textInput, urlMode);
         setTextOutput(out);
+        addHistoryItem({
+          toolId: 'url-encode',
+          toolTitle: 'URL Percent Encoder',
+          badge: urlMode === 'encode' ? 'ENCODE' : 'DECODE',
+          summary: textInput.slice(0, 60),
+          inputContent: textInput,
+          outputContent: out,
+        });
       } else if (activeTool === 'uuid') {
         const uuids = generateUUIDs(uuidCount);
         setTextOutput(uuids.join('\n'));
+        addHistoryItem({
+          toolId: 'uuid',
+          toolTitle: 'UUID v4 Generator',
+          badge: `${uuidCount} UUIDs`,
+          summary: `Generated ${uuidCount} random UUIDs`,
+          outputContent: uuids.join('\n'),
+        });
       } else if (activeTool === 'markdown-html') {
         if (markdownDirection === 'md-to-html') {
           const out = markdownToHtml(textInput);
           setTextOutput(out);
+          addHistoryItem({
+            toolId: 'markdown-html',
+            toolTitle: 'Markdown ⇄ HTML',
+            badge: 'HTML',
+            summary: textInput.slice(0, 60),
+            inputContent: textInput,
+            outputContent: out,
+          });
         } else {
           const out = htmlToMarkdown(textInput);
           setTextOutput(out);
+          addHistoryItem({
+            toolId: 'markdown-html',
+            toolTitle: 'Markdown ⇄ HTML',
+            badge: 'MD',
+            summary: textInput.slice(0, 60),
+            inputContent: textInput,
+            outputContent: out,
+          });
         }
       } else if (activeTool === 'csv-json') {
         if (!textInput.trim()) throw new Error('Please provide CSV or JSON data to convert.');
@@ -553,13 +767,30 @@ export function App() {
           const parsed = parseCsv(textInput, csvDelimiter, csvHasHeader);
           if (parsed.error) throw new Error(parsed.error);
           setCsvParsedResult(parsed);
-          setTextOutput(JSON.stringify(parsed.rows, null, csvIndentation));
+          const out = JSON.stringify(parsed.rows, null, csvIndentation);
+          setTextOutput(out);
+          addHistoryItem({
+            toolId: 'csv-json',
+            toolTitle: 'CSV ⇄ JSON',
+            badge: 'JSON',
+            summary: textInput.slice(0, 60),
+            inputContent: textInput,
+            outputContent: out,
+          });
         } else {
           const res = jsonToCsv(textInput, csvDelimiter);
           if (res.error) throw new Error(res.error);
           setTextOutput(res.csv);
           const parsed = parseCsv(res.csv, csvDelimiter, true);
           setCsvParsedResult(parsed);
+          addHistoryItem({
+            toolId: 'csv-json',
+            toolTitle: 'CSV ⇄ JSON',
+            badge: 'CSV',
+            summary: textInput.slice(0, 60),
+            inputContent: textInput,
+            outputContent: res.csv,
+          });
         }
       }
     } catch (err: any) {
@@ -582,6 +813,7 @@ export function App() {
     csvDelimiter,
     csvHasHeader,
     csvIndentation,
+    addHistoryItem,
   ]);
 
   // Real-time live transformation for Code & Data utilities
@@ -879,6 +1111,21 @@ export function App() {
               aria-label="Search tools"
             >
               <Search className="w-4 h-4 text-neutral-400" />
+            </button>
+
+            {/* History & Presets Drawer Button */}
+            <button
+              onClick={() => setIsHistoryDrawerOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold glass-panel border border-neutral-200/80 dark:border-white/10 hover:border-amber-500/40 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white transition cursor-pointer shadow-2xs"
+              title="Recent conversion history and quick presets"
+            >
+              <Clock className="w-3.5 h-3.5 text-amber-500" />
+              <span className="hidden md:inline">History</span>
+              {history.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-neutral-950 text-[10px] font-bold">
+                  {history.length}
+                </span>
+              )}
             </button>
 
             {/* Install PWA Button */}
@@ -2969,6 +3216,15 @@ export function App() {
         onClose={() => setIsPaletteOpen(false)}
         tools={TOOLS}
         onSelectTool={handlePaletteSelectTool}
+      />
+      <HistoryPresetsDrawer
+        isOpen={isHistoryDrawerOpen}
+        onClose={() => setIsHistoryDrawerOpen(false)}
+        history={history}
+        onClearHistory={() => setHistory([])}
+        onDeleteHistoryItem={(id) => setHistory((prev) => prev.filter((item) => item.id !== id))}
+        onRestoreHistory={handleRestoreHistory}
+        presets={PRESETS}
       />
 
       {/* Window-wide Drag and Drop Overlay */}
