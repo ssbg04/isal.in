@@ -43,12 +43,17 @@ import {
   Music,
   Video,
   Mail,
+  ArrowLeft,
+  ChevronDown,
+  Sliders,
+  Sparkles,
 } from 'lucide-react';
+import { HomePage } from './components/HomePage';
+import { ConversionStateIndicator } from './components/ConversionStateIndicator';
 import { AdSlot } from './components/AdSlot';
 import { CategoryFilter } from './components/CategoryFilter';
 import { PrivacyModal } from './components/PrivacyModal';
 import { BrandLogo } from './components/BrandLogo';
-import { LoadingScreen } from './components/LoadingScreen';
 import { ImageCompareSlider } from './components/ImageCompareSlider';
 import { DualPaneCodeWorkspace } from './components/DualPaneCodeWorkspace';
 import { CommandPalette } from './components/CommandPalette';
@@ -305,31 +310,20 @@ const CATEGORIES: { id: Category; label: string; count: number }[] = [
 
 const getToolCategoryColor = (category: Category, isSelected: boolean) => {
   if (isSelected) {
-    if (category === 'media') return 'bg-amber-500 text-neutral-950 shadow-sm shadow-amber-500/20';
-    if (category === 'security') return 'bg-emerald-500 text-neutral-950 shadow-sm shadow-emerald-500/20';
-    if (category === 'units') return 'bg-sky-500 text-neutral-950 shadow-sm shadow-sky-500/20';
-    if (category === 'calculators') return 'bg-indigo-500 text-neutral-950 shadow-sm shadow-indigo-500/20';
-    return 'bg-blue-500 text-neutral-950 shadow-sm shadow-blue-500/20';
+    if (category === 'media') return 'bg-amber-500 text-neutral-950 shadow-sm shadow-amber-500/20 font-bold';
+    if (category === 'security') return 'bg-amber-600 text-white shadow-sm shadow-amber-600/20 font-bold';
+    if (category === 'units') return 'bg-blue-600 text-white shadow-sm shadow-blue-600/20 font-bold';
+    if (category === 'calculators') return 'bg-rose-600 text-white shadow-sm shadow-rose-600/20 font-bold';
+    return 'bg-blue-600 text-white shadow-sm shadow-blue-600/20 font-bold';
   }
-  if (category === 'media') return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20';
-  if (category === 'security') return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20';
-  if (category === 'units') return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 group-hover:bg-sky-500/20';
-  if (category === 'calculators') return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 group-hover:bg-indigo-500/20';
-  return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20';
+  if (category === 'media') return 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20';
+  if (category === 'security') return 'bg-amber-600/10 text-amber-800 dark:text-amber-400 border border-amber-600/20 group-hover:bg-amber-600/20';
+  if (category === 'units') return 'bg-blue-600/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20';
+  if (category === 'calculators') return 'bg-rose-600/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 group-hover:bg-rose-500/20';
+  return 'bg-blue-600/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20';
 };
 
 export function App() {
-  // Loading screen state
-  const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    // Graceful initial duration ensuring the spinning logo animation is visible and smooth
-    const timer = setTimeout(() => {
-      setIsAppLoading(false);
-    }, 850);
-    return () => clearTimeout(timer);
-  }, []);
-
   // Theme state
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -352,6 +346,17 @@ export function App() {
     return 'image-convert';
   });
 
+  // Current view mode: 'home' for dedicated discovery landing, 'tool' for converter workspace
+  const [viewMode, setViewMode] = useState<'home' | 'tool'>(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hash = window.location.hash.replace('#', '') as ToolType;
+      if (TOOLS.some((t) => t.id === hash)) {
+        return 'tool';
+      }
+    }
+    return 'home';
+  });
+
   // File state
   const [files, setFiles] = useState<File[]>([]);
   const [originalPreviewUrl, setOriginalPreviewUrl] = useState<string | null>(null);
@@ -363,6 +368,8 @@ export function App() {
   const [selectedResultIndex, setSelectedResultIndex] = useState<number>(0);
   const [isZipping, setIsZipping] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorRemedy, setErrorRemedy] = useState<string | null>(null);
+  const [conversionProgress, setConversionProgress] = useState<number>(0);
 
   // Text, Color & Markdown utility state
   const [textInput, setTextInput] = useState<string>('');
@@ -471,7 +478,19 @@ export function App() {
 
   // Sync activeTool with URL hash, document title, and SEO meta tags
   useEffect(() => {
-    if (currentToolMeta) {
+    if (viewMode === 'home') {
+      document.title = 'Isal.in Multi-Converter — Convert files and data in one place | Isalin ang lahat. Convert anything.';
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) {
+        metaDesc.setAttribute(
+          'content',
+          'Free, 100% private in-browser utility suite. Convert images, documents, text, code, physical units, and Philippine financial calculators with zero server uploads.'
+        );
+      }
+      if (typeof window !== 'undefined' && window.location.hash && window.location.hash !== '#' && window.location.hash !== '#explore-tools') {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    } else if (currentToolMeta) {
       document.title = `${currentToolMeta.title} — Isal.in: Isalin ang lahat. Convert anything.`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
@@ -488,14 +507,20 @@ export function App() {
     if (favLink && !favLink.href.includes('v=6')) {
       favLink.href = '/favicon.svg?v=6';
     }
-  }, [activeTool, currentToolMeta]);
+  }, [activeTool, currentToolMeta, viewMode]);
 
   // Listen to browser Back / Forward navigation
   useEffect(() => {
     const onHashChange = () => {
-      const hash = window.location.hash.replace('#', '') as ToolType;
+      const rawHash = window.location.hash.replace('#', '');
+      if (!rawHash || rawHash === 'home' || rawHash === 'explore-tools') {
+        setViewMode('home');
+        return;
+      }
+      const hash = rawHash as ToolType;
       if (TOOLS.some((t) => t.id === hash)) {
         setActiveTool(hash);
+        setViewMode('tool');
       }
     };
     window.addEventListener('hashchange', onHashChange);
@@ -553,6 +578,8 @@ export function App() {
       setResult(null);
       setBatchResults([]);
       setErrorMsg(null);
+      setErrorRemedy(null);
+      setConversionProgress(0);
       setOriginalPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return null;
@@ -598,9 +625,62 @@ export function App() {
     }
   }, [activeTool, csvIndentation]);
 
+  const navigateToHome = useCallback(() => {
+    setViewMode('home');
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', window.location.pathname);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
+
+  const handleConvertAnother = useCallback(() => {
+    setFiles([]);
+    setResult(null);
+    setBatchResults([]);
+    setErrorMsg(null);
+    setErrorRemedy(null);
+    setConversionProgress(0);
+    if (originalPreviewUrl) {
+      URL.revokeObjectURL(originalPreviewUrl);
+      setOriginalPreviewUrl(null);
+    }
+    setTimeout(() => {
+      document.getElementById('file-upload-input')?.click();
+    }, 80);
+  }, [originalPreviewUrl]);
+
+  const navigateToTool = useCallback(
+    (toolId: ToolType, preset?: { targetFormat?: string; mode?: string }) => {
+      handleToolSelect(toolId);
+      setViewMode('tool');
+      if (typeof window !== 'undefined') {
+        window.location.hash = `#${toolId}`;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      if (preset?.targetFormat && toolId === 'image-convert') {
+        setTargetImageFormat(preset.targetFormat as SupportedImageFormat);
+      }
+      if (preset?.mode && toolId === 'json-yaml') {
+        setJsonDirection(preset.mode as 'json-to-yaml' | 'yaml-to-json');
+      }
+      if (preset?.mode && toolId === 'base64') {
+        setBase64Mode(preset.mode as 'encode' | 'decode');
+      }
+      if (preset?.mode && toolId === 'csv-json') {
+        setCsvMode(preset.mode as 'csv-to-json' | 'json-to-csv');
+      }
+    },
+    [handleToolSelect]
+  );
+
   const handlePaletteSelectTool = useCallback(
     (toolId: ToolType, initialInput?: string) => {
       handleToolSelect(toolId);
+      setViewMode('tool');
+      if (typeof window !== 'undefined') {
+        window.location.hash = `#${toolId}`;
+      }
       if (initialInput) {
         setTextInput(initialInput);
         if (toolId === 'color-convert') {
@@ -612,7 +692,7 @@ export function App() {
         }
       }
       setTimeout(() => {
-        document.getElementById('tool-workspace')?.scrollIntoView({ behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 50);
     },
     [handleToolSelect]
@@ -913,15 +993,21 @@ export function App() {
 
   const handleConvert = useCallback(async () => {
     setErrorMsg(null);
+    setErrorRemedy(null);
     setIsProcessing(true);
+    setConversionProgress(15);
     try {
       if (activeTool === 'image-convert') {
         if (!files.length) throw new Error('Please select at least one image file to proceed.');
         const convertedItems: ConversionResult[] = [];
-        for (const file of files) {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const progress = Math.round(20 + ((i + 1) / files.length) * 75);
+          setConversionProgress(progress);
           const res = await convertImage(file, targetImageFormat, imageQuality);
           convertedItems.push(res);
         }
+        setConversionProgress(100);
         setBatchResults(convertedItems);
         setResult(convertedItems[0]);
         if (convertedItems[0]) {
@@ -936,7 +1022,9 @@ export function App() {
         }
       } else if (activeTool === 'images-to-pdf') {
         if (!files.length) throw new Error('Select at least one image to compile.');
+        setConversionProgress(45);
         const res = await convertImagesToPdf(files);
+        setConversionProgress(100);
         setResult(res);
         setBatchResults([res]);
         const pdfKb = res.sizeBytes ? `${(res.sizeBytes / 1024).toFixed(1)} KB` : '';
@@ -1047,7 +1135,15 @@ export function App() {
         }
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'An error occurred during conversion.');
+      const msg = err?.message || 'An error occurred during conversion.';
+      setErrorMsg(msg);
+      if (msg.includes('size') || msg.includes('Limit')) {
+        setErrorRemedy('Please select a file smaller than 25MB or compress it before converting.');
+      } else if (msg.includes('format') || msg.includes('type')) {
+        setErrorRemedy('Make sure your file is a supported image (PNG, JPG, WebP, AVIF, BMP, GIF, ICO).');
+      } else {
+        setErrorRemedy('Check that the file is not corrupted, or try testing with our sample image.');
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -1323,12 +1419,6 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#0c0e14] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-300 relative selection:bg-amber-500/30 selection:text-amber-900 dark:selection:bg-amber-400/20 dark:selection:text-amber-200">
-      {/* App Loading Screen with Spinning Philippine Sun & Converter Logo */}
-      <LoadingScreen
-        isVisible={isAppLoading}
-        onFinished={() => setIsAppLoading(false)}
-      />
-
       {/* Skip to Main Content Link for Keyboard and Screen Reader Accessibility */}
       <a
         href="#tool-workspace"
@@ -1337,11 +1427,11 @@ export function App() {
         Skip to main converter
       </a>
 
-      {/* Background Ambient Mesh Lighting & Grid Accents */}
+      {/* Background Ambient Mesh Lighting & Grid Accents (Philippine Tri-Color: Sun, Ocean Blue & Festive Crimson) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[380px] bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent blur-3xl rounded-full dark:from-amber-500/15 dark:via-amber-400/5" />
         <div className="absolute top-1/4 -right-32 w-[500px] h-[500px] bg-blue-600/5 dark:bg-blue-600/10 blur-3xl rounded-full" />
-        <div className="absolute bottom-10 -left-32 w-[450px] h-[450px] bg-emerald-600/5 dark:bg-emerald-600/10 blur-3xl rounded-full" />
+        <div className="absolute bottom-10 -left-32 w-[450px] h-[450px] bg-rose-600/5 dark:bg-rose-600/10 blur-3xl rounded-full" />
       </div>
 
       {/* Sleek Glassmorphic Top App Bar */}
@@ -1350,10 +1440,10 @@ export function App() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setIsAppLoading(true)}
-              title="Click to replay loading screen animation"
-              className="flex items-center gap-2 cursor-pointer transition hover:opacity-90 active:scale-95 text-left focus:outline-none"
-              aria-label="Isal.in Multi-Converter Logo - Replay Loading Screen"
+              onClick={navigateToHome}
+              title="Isal.in Multi-Converter - Go to Homepage"
+              className="flex items-center gap-2 cursor-pointer transition hover:opacity-90 active:scale-95 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-xl"
+              aria-label="Isal.in Multi-Converter Logo - Home"
             >
               <BrandLogo size="md" showWordmark={true} />
             </button>
@@ -1361,8 +1451,33 @@ export function App() {
               <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 italic tracking-tight">
                 "Isalin ang lahat. Convert anything."
               </span>
-              <span className="text-[10px] text-neutral-400 font-mono">100% client-side • zero upload</span>
+              <span className="text-[10px] text-neutral-600 dark:text-neutral-400 font-mono">100% client-side • zero upload</span>
             </div>
+            {/* Primary Navigation Links */}
+            <nav className="hidden lg:flex items-center gap-1 ml-4 pl-4 border-l border-neutral-200 dark:border-neutral-800 text-xs font-semibold">
+              <button
+                onClick={() => {
+                  if (viewMode === 'home') {
+                    document.getElementById('explore-tools')?.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    navigateToHome();
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-lg transition cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none ${
+                  viewMode === 'home'
+                    ? 'text-amber-700 dark:text-amber-400 bg-amber-500/10'
+                    : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white'
+                }`}
+              >
+                Tools
+              </button>
+              <button
+                onClick={() => setIsPrivacyOpen(true)}
+                className="px-3 py-1.5 rounded-lg text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white transition cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+              >
+                About & Privacy
+              </button>
+            </nav>
           </div>
 
           <div className="flex items-center gap-2.5 sm:gap-3">
@@ -1372,12 +1487,12 @@ export function App() {
               aria-label="Search tools and features (Ctrl+K or ⌘K)"
               aria-haspopup="dialog"
               aria-expanded={isPaletteOpen}
-              className="hidden sm:inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white glass-panel border border-neutral-200/80 dark:border-white/10 hover:border-amber-500/40 transition cursor-pointer shadow-2xs"
+              className="hidden sm:inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl text-xs text-neutral-600 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white glass-panel border border-neutral-300/80 dark:border-white/10 hover:border-amber-500/50 transition cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
               title="Quick tool search and switcher (Ctrl+K or ⌘K)"
             >
-              <Search className="w-3.5 h-3.5 text-neutral-400" />
+              <Search className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
               <span>Search tools...</span>
-              <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-400">
+              <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300">
                 ⌘K
               </kbd>
             </button>
@@ -1388,9 +1503,9 @@ export function App() {
               aria-label="Open search command palette"
               aria-haspopup="dialog"
               aria-expanded={isPaletteOpen}
-              className="sm:hidden w-9 h-9 rounded-xl border border-neutral-200/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition cursor-pointer"
+              className="sm:hidden w-9 h-9 rounded-xl border border-neutral-300/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white transition cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
             >
-              <Search className="w-4 h-4 text-neutral-400" />
+              <Search className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             </button>
 
             {/* Desktop History & Presets Drawer Button */}
@@ -1399,7 +1514,7 @@ export function App() {
               aria-label={`Open activity history (${history.length} items saved)`}
               aria-haspopup="dialog"
               aria-expanded={isHistoryDrawerOpen}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold glass-panel border border-neutral-200/80 dark:border-white/10 hover:border-amber-500/40 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white transition cursor-pointer shadow-2xs"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold glass-panel border border-neutral-300/80 dark:border-white/10 hover:border-amber-500/50 text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white transition cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
               title="Recent conversion history and quick presets"
             >
               <Clock className="w-3.5 h-3.5 text-amber-500" />
@@ -1417,7 +1532,7 @@ export function App() {
               aria-label={`Open activity history (${history.length} items saved)`}
               aria-haspopup="dialog"
               aria-expanded={isHistoryDrawerOpen}
-              className="sm:hidden relative w-9 h-9 rounded-xl border border-neutral-200/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:scale-105 active:scale-95 transition cursor-pointer"
+              className="sm:hidden relative w-9 h-9 rounded-xl border border-neutral-300/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:scale-105 active:scale-95 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
               title="Recent conversion history and quick presets"
             >
               <Clock className="w-4 h-4 text-amber-500" />
@@ -1433,7 +1548,7 @@ export function App() {
               <button
                 onClick={handleInstallApp}
                 aria-label="Install Multi-Converter application on device"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 transition shadow-sm shadow-amber-500/20 active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 transition shadow-sm shadow-amber-500/20 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
                 title="Install Multi-Converter on your device"
               >
                 <DownloadCloud className="w-3.5 h-3.5" />
@@ -1446,7 +1561,7 @@ export function App() {
             <div
               role="status"
               aria-label="100% Private Sandbox: All operations execute locally in your browser"
-              className="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 shadow-xs"
+              className="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-500/20 shadow-xs"
             >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -1460,7 +1575,7 @@ export function App() {
               onClick={() => setIsDark(!isDark)}
               aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
               aria-pressed={isDark}
-              className="w-9 h-9 rounded-xl border border-neutral-200/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:scale-105 active:scale-95 transition cursor-pointer"
+              className="w-9 h-9 rounded-xl border border-neutral-300/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:scale-105 active:scale-95 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
             >
               {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-neutral-700" />}
             </button>
@@ -1489,22 +1604,25 @@ export function App() {
         </aside>
       )}
 
-      {/* 3.1 Header Advertisement (Subtle & Non-Intrusive) */}
-      <section className="px-4 pt-4 sm:pt-6 relative z-10" aria-label="Sponsor Banner">
-        <AdSlot placement="header" />
-      </section>
-
-      {/* Main Workspace Layout */}
-      <main
-        id="main-content"
-        role="main"
-        className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10"
-      >
-        {/* Left Column: Categorized Tool Drawer & Catalog (lg:col-span-4) */}
-        <aside
-          aria-label="Utility Tools Catalog"
-          className="lg:col-span-4 space-y-4 lg:sticky lg:top-20"
+      {viewMode === 'home' ? (
+        <main id="main-content" role="main" className="flex-1 w-full relative z-10">
+          <HomePage
+            tools={TOOLS}
+            onSelectTool={navigateToTool}
+            onOpenPrivacy={() => setIsPrivacyOpen(true)}
+          />
+        </main>
+      ) : (
+        <main
+          id="main-content"
+          role="main"
+          className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10"
         >
+          {/* Left Column: Categorized Tool Drawer & Catalog (lg:col-span-4) - Hidden on mobile in tool mode to prioritize workspace */}
+          <aside
+            aria-label="Utility Tools Catalog"
+            className="hidden lg:block lg:col-span-4 space-y-4 lg:sticky lg:top-20"
+          >
           {/* Category Filter */}
           <CategoryFilter
             categories={CATEGORIES}
@@ -1655,14 +1773,52 @@ export function App() {
           </div>
         </aside>
 
-        {/* Right Column: Active Utility Workspace (lg:col-span-8) */}
-        <div className="lg:col-span-8 space-y-6">
+        {/* Right Column: Active Utility Workspace (Dynamic Category Adaptability) */}
+        <div id="tool-workspace" className="col-span-1 lg:col-span-8 space-y-6">
+          {/* Converter Header & Breadcrumbs */}
+          <div className={`flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-neutral-200/80 dark:border-white/10 ${
+            ['length-convert', 'mass-convert', 'area-convert', 'volume-convert', 'temperature-convert', 'speed-convert', 'time-convert', 'bmi-calc', 'gwa-calc'].includes(activeTool)
+              ? 'max-w-3xl mx-auto'
+              : 'w-full'
+          }`}>
+            <div className="flex items-center gap-2 text-xs">
+              <button
+                onClick={navigateToHome}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-panel text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:border-amber-500/50 transition cursor-pointer font-semibold shadow-2xs focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>All Tools</span>
+              </button>
+              <span className="text-neutral-400">/</span>
+              <span className="text-neutral-600 dark:text-neutral-400 uppercase tracking-wider text-[10px] font-mono font-medium">
+                {currentToolMeta.category}
+              </span>
+              <span className="text-neutral-400">/</span>
+              <span className="font-semibold text-neutral-950 dark:text-white truncate">
+                {currentToolMeta.title}
+              </span>
+            </div>
+
+            <button
+              onClick={() => setIsPaletteOpen(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-neutral-600 hover:text-amber-700 dark:text-neutral-300 dark:hover:text-amber-400 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition cursor-pointer font-medium focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+              title="Switch to another tool (Ctrl+K or ⌘K)"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Switch Tool</span>
+              <kbd className="hidden sm:inline text-[9px] font-mono px-1 py-0.2 rounded bg-neutral-200/60 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">⌘K</kbd>
+            </button>
+          </div>
           
           {/* Active Utility Workspace Card */}
           <section
             id="tool-workspace"
             aria-labelledby="active-tool-title"
-            className="glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-neutral-200/80 dark:border-white/10 relative overflow-hidden scroll-mt-20 sm:scroll-mt-24"
+            className={`glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-neutral-200/80 dark:border-white/10 relative overflow-hidden scroll-mt-20 sm:scroll-mt-24 transition-all duration-300 ${
+              ['length-convert', 'mass-convert', 'area-convert', 'volume-convert', 'temperature-convert', 'speed-convert', 'time-convert', 'bmi-calc', 'gwa-calc'].includes(activeTool)
+                ? 'max-w-3xl mx-auto'
+                : 'w-full'
+            }`}
           >
             {/* Top Specular Glow Edge */}
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/40 dark:via-amber-400/30 to-transparent pointer-events-none" />
@@ -1726,38 +1882,68 @@ export function App() {
             {/* Media Tools (Image / PDF) Workspace */}
             {(activeTool === 'image-convert' || activeTool === 'images-to-pdf') && (
               <div className="mt-5 space-y-5">
+                {/* 3-Stage Lifecycle Stepper & Security Badge */}
+                <ConversionStateIndicator
+                  state={
+                    isProcessing
+                      ? 'converting'
+                      : result?.downloadUrl
+                      ? 'completed'
+                      : errorMsg
+                      ? 'error'
+                      : 'ready'
+                  }
+                  hasFile={files.length > 0}
+                  fileName={files.length > 0 ? (files.length === 1 ? files[0].name : `${files.length} images selected`) : undefined}
+                  progressPercent={conversionProgress}
+                  errorMessage={errorMsg || undefined}
+                  errorRemedy={errorRemedy || undefined}
+                  supportedFormats={activeTool === 'image-convert' ? 'PNG, JPG, WebP, AVIF, BMP, GIF, ICO' : 'PNG, JPG, JPEG'}
+                  maxFileSizeMB={APP_LIMITS.free.maxSingleFileMB}
+                  onReset={handleConvertAnother}
+                  outputFormatName={
+                    activeTool === 'image-convert'
+                      ? targetImageFormat.split('/')[1]?.toUpperCase()
+                      : 'PDF'
+                  }
+                />
+
                 {/* Drag & Drop Canvas */}
                 <div
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleFileDrop}
-                  onClick={() => document.getElementById('file-upload-input')?.click()}
-                  className="group relative border-2 border-dashed border-neutral-300/80 dark:border-neutral-700/80 hover:border-amber-500/70 dark:hover:border-amber-400/60 bg-gradient-to-b from-white/70 to-neutral-50/50 dark:from-neutral-900/40 dark:to-[#0c0e14]/60 rounded-2xl p-8 sm:p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-amber-500/5 overflow-hidden"
+                  className="group relative border-2 border-dashed border-neutral-300/80 dark:border-neutral-700/80 hover:border-amber-500/70 dark:hover:border-amber-400/60 bg-gradient-to-b from-white/70 to-neutral-50/50 dark:from-neutral-900/40 dark:to-[#0c0e14]/60 rounded-3xl p-7 sm:p-9 flex flex-col items-center justify-center text-center transition-all duration-200 hover:shadow-lg hover:shadow-amber-500/5 overflow-hidden"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform duration-200 shadow-sm">
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200 shadow-sm">
                     <UploadCloud className="w-7 h-7 stroke-[1.8]" />
                   </div>
-                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                    Drop your {activeTool === 'image-convert' ? 'image' : 'images'} here, or{' '}
-                    <span className="text-amber-600 dark:text-amber-400 underline underline-offset-4 decoration-amber-500/50 hover:decoration-amber-500">browse files</span>
+                  <h3 className="text-base sm:text-lg font-bold text-neutral-950 dark:text-white">
+                    Drop your {activeTool === 'image-convert' ? 'images' : 'files'} here
+                  </h3>
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 max-w-sm">
+                    or choose files directly from your computer or phone
                   </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5">
-                    Free Limit: Up to {APP_LIMITS.free.maxSingleFileMB}MB per file • Processed 100% locally
-                  </p>
-                  {activeTool === 'image-convert' && (
-                    <div className="mt-3 flex items-center gap-2">
+                  
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('file-upload-input')?.click()}
+                      className="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 shadow-md shadow-amber-500/20 active:scale-95 transition cursor-pointer"
+                    >
+                      Choose {activeTool === 'image-convert' ? 'Images' : 'Files'}
+                    </button>
+                    {activeTool === 'image-convert' && (
                       <button
                         type="button"
                         id="load-sample-image-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLoadSampleImage();
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/25 transition active:scale-95 cursor-pointer"
+                        onClick={handleLoadSampleImage}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold glass-panel text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:border-amber-500/40 transition active:scale-95 cursor-pointer shadow-2xs"
                       >
-                        <span>⚡ Try Sample Image</span>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Try Sample Image</span>
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                   <input
                     id="file-upload-input"
                     type="file"
@@ -1788,100 +1974,177 @@ export function App() {
                   />
                 )}
 
-                {/* Additional Settings for Image Converter */}
+                {/* Relevant Output Options for Image Converter */}
                 {activeTool === 'image-convert' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                        Target Format
-                      </label>
-                      <select
-                        value={targetImageFormat}
-                        onChange={(e) => setTargetImageFormat(e.target.value as any)}
-                        className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 outline-none focus:border-neutral-900 dark:focus:border-neutral-100"
-                      >
-                        <option value="image/webp">WebP (Optimized / Lightest)</option>
-                        <option value="image/png">PNG (Lossless 32-bit)</option>
-                        <option value="image/jpeg">JPEG / JPG (Standard Photo)</option>
-                        <option value="image/avif">AVIF (Next-Gen Open Media)</option>
-                        <option value="image/bmp">BMP (Uncompressed Bitmap)</option>
-                        <option value="image/x-icon">ICO (Windows & Web Favicon)</option>
-                        <option value="image/gif">GIF (Graphics Interchange)</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs font-medium text-neutral-700 dark:text-neutral-300">
-                        <span>Quality</span>
-                        <span className="font-mono">{Math.round(imageQuality * 100)}%</span>
+                  <div className="space-y-4 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Output Format Selector */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center justify-between">
+                          <span>Output Format</span>
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-normal">
+                            Local WebAssembly
+                          </span>
+                        </label>
+                        <select
+                          value={targetImageFormat}
+                          onChange={(e) => setTargetImageFormat(e.target.value as any)}
+                          className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
+                        >
+                          <option value="image/webp">WebP (Optimized / Lightest)</option>
+                          <option value="image/png">PNG (Lossless 32-bit)</option>
+                          <option value="image/jpeg">JPEG / JPG (Standard Photo)</option>
+                          <option value="image/avif">AVIF (Next-Gen Open Media)</option>
+                          <option value="image/bmp">BMP (Uncompressed Bitmap)</option>
+                          <option value="image/x-icon">ICO (Windows & Web Favicon)</option>
+                          <option value="image/gif">GIF (Graphics Interchange)</option>
+                        </select>
                       </div>
-                      <input
-                        type="range"
-                        min="0.1"
-                        max="1.0"
-                        step="0.05"
-                        value={imageQuality}
-                        onChange={(e) => setImageQuality(parseFloat(e.target.value))}
-                        className="w-full accent-neutral-900 dark:accent-neutral-100 h-2 mt-2"
-                      />
-                    </div>
 
-                    {/* EXIF Privacy Stripper Option */}
-                    <div className="sm:col-span-2 flex items-center justify-between p-3 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/30">
-                      <div className="flex items-center gap-2.5">
-                        <Shield className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <div>
-                          <p className="text-xs font-medium text-neutral-900 dark:text-neutral-100">
-                            Strip EXIF & GPS Metadata
-                          </p>
-                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                            Removes private camera, date, and geolocation tags from output image.
-                          </p>
+                      {/* Quality Slider with Quick Preset Pills */}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                          <span>Quality</span>
+                          <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">
+                            {Math.round(imageQuality * 100)}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.1"
+                          max="1.0"
+                          step="0.05"
+                          value={imageQuality}
+                          onChange={(e) => setImageQuality(parseFloat(e.target.value))}
+                          className="w-full accent-amber-500 h-2 mt-2 cursor-pointer"
+                        />
+                        <div className="flex items-center gap-1.5 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setImageQuality(0.9)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
+                              imageQuality === 0.9 ? 'bg-amber-500 text-neutral-950 font-bold' : 'glass-panel text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                            }`}
+                          >
+                            90% High
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImageQuality(0.8)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
+                              imageQuality === 0.8 ? 'bg-amber-500 text-neutral-950 font-bold' : 'glass-panel text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                            }`}
+                          >
+                            80% Balanced
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setImageQuality(0.65)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
+                              imageQuality === 0.65 ? 'bg-amber-500 text-neutral-950 font-bold' : 'glass-panel text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                            }`}
+                          >
+                            65% Smallest
+                          </button>
                         </div>
                       </div>
-                      <input
-                        type="checkbox"
-                        checked={stripExif}
-                        onChange={(e) => setStripExif(e.target.checked)}
-                        className="w-4 h-4 rounded text-neutral-900 dark:text-white accent-neutral-900 dark:accent-neutral-100 cursor-pointer"
-                      />
                     </div>
+
+                    {/* Collapsible Advanced Settings (Kept Collapsed Until Needed) */}
+                    <details className="group rounded-2xl glass-panel border border-neutral-200/80 dark:border-white/10 overflow-hidden">
+                      <summary className="px-4 py-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center justify-between cursor-pointer hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50 transition">
+                        <span className="flex items-center gap-2">
+                          <Sliders className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Advanced Settings (EXIF Privacy & Metadata)</span>
+                        </span>
+                        <ChevronDown className="w-4 h-4 text-neutral-400 group-open:rotate-180 transition-transform" />
+                      </summary>
+                      <div className="p-4 pt-2 border-t border-neutral-200/60 dark:border-white/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="pr-4">
+                            <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                              Strip EXIF & GPS Metadata
+                            </p>
+                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                              Removes camera settings, dates, and geolocation tags from output image.
+                            </p>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={stripExif}
+                            onChange={(e) => setStripExif(e.target.checked)}
+                            className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    </details>
                   </div>
                 )}
 
-                {/* Conversion Trigger Button */}
-                <button
-                  disabled={!files.length || isProcessing}
-                  onClick={handleConvert}
-                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none font-bold text-sm rounded-xl transition shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>
-                    {isProcessing
-                      ? 'Processing in Browser...'
-                      : activeTool === 'image-convert'
-                      ? `Convert ${files.length > 1 ? `${files.length} Images` : 'Image'}`
-                      : 'Merge into PDF'}
-                  </span>
-                  <kbd className="hidden sm:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/15 text-neutral-900">
-                    Ctrl+↵
-                  </kbd>
-                </button>
+                {/* Primary Action Button (State-Aware) */}
+                {files.length === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('file-upload-input')?.click()}
+                    className="w-full py-4 bg-neutral-100 dark:bg-neutral-900/60 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-bold text-xs sm:text-sm rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <UploadCloud className="w-4 h-4 text-amber-500" />
+                    <span>Choose files above to start conversion</span>
+                  </button>
+                ) : (
+                  <button
+                    disabled={isProcessing}
+                    onClick={handleConvert}
+                    className="w-full py-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 disabled:opacity-50 font-extrabold text-sm sm:text-base rounded-2xl transition shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 active:scale-[0.99] flex items-center justify-center gap-2.5 cursor-pointer ring-2 ring-amber-400/30"
+                  >
+                    <span>
+                      {isProcessing
+                        ? `Converting on your device (${conversionProgress}%)...`
+                        : activeTool === 'image-convert'
+                        ? `Convert to ${targetImageFormat.split('/')[1]?.toUpperCase()} (${files.length} ${files.length > 1 ? 'Images' : 'Image'})`
+                        : `Merge ${files.length} Images into PDF`}
+                    </span>
+                    <kbd className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-lg bg-black/15 text-neutral-950 font-semibold">
+                      Ctrl+↵
+                    </kbd>
+                  </button>
+                )}
 
-                {/* Interactive Image Comparison Slider (for Single or Selected Batch Image) */}
+                {/* Post-Conversion Results & Visual Actions */}
                 {activeTool === 'image-convert' && result?.downloadUrl && originalPreviewUrl && (
-                  <div className="mt-5 space-y-4">
-                    <div className="flex items-center justify-between pb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
-                        <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                          {files.length > 1
-                            ? `Visual Comparison: File #${selectedResultIndex + 1} (${files[selectedResultIndex]?.name || 'Image'})`
-                            : 'Interactive Visual Quality Comparison'}
-                        </h3>
+                  <div className="mt-6 space-y-4 pt-4 border-t border-neutral-200/80 dark:border-white/10">
+                    {/* Success Summary Pill */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                          <Check className="w-4 h-4 stroke-[2.5]" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-sm text-emerald-950 dark:text-emerald-200">
+                            Conversion Complete!
+                          </div>
+                          <div className="text-[11px] text-neutral-600 dark:text-neutral-300">
+                            {files[0]?.name} ({files[0] ? (files[0].size > 1024 * 1024 ? `${(files[0].size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(files[0].size / 1024)} KB`) : ''})
+                            {' → '}
+                            <strong className="text-emerald-700 dark:text-emerald-300 font-mono">
+                              {result.sizeBytes ? (result.sizeBytes > 1024 * 1024 ? `${(result.sizeBytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(result.sizeBytes / 1024)} KB`) : ''}
+                            </strong>
+                            {files[0] && result.sizeBytes && files[0].size > result.sizeBytes && (
+                              <span className="ml-1.5 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold font-mono text-[10px]">
+                                -{Math.round(((files[0].size - result.sizeBytes) / files[0].size) * 100)}% smaller
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-[11px] font-mono text-neutral-400 hidden sm:inline">
-                        Drag divider or use keyboard ← →
-                      </span>
+
+                      <button
+                        onClick={handleConvertAnother}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-panel text-xs font-semibold text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:border-amber-500/50 transition cursor-pointer self-start sm:self-auto"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Convert another file</span>
+                      </button>
                     </div>
 
                     <ImageCompareSlider
@@ -1903,13 +2166,13 @@ export function App() {
                       }}
                     />
 
-                    {/* Single Image Direct Action Bar */}
+                    {/* Single Image Primary Download and Action Bar */}
                     {batchResults.length <= 1 && (
                       <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                         <a
                           href={result.downloadUrl}
                           download={result.filename}
-                          className="flex-1 w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 hover:shadow-lg transition cursor-pointer"
+                          className="flex-1 w-full py-4 px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-extrabold text-sm sm:text-base rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition cursor-pointer ring-2 ring-amber-400/30"
                         >
                           <Download className="w-4 h-4" />
                           <span>Download {result.filename}</span>
@@ -1917,52 +2180,54 @@ export function App() {
 
                         <button
                           type="button"
-                          onClick={() => {
-                            if (result.downloadUrl) {
-                              navigator.clipboard.writeText(result.filename);
-                            }
-                          }}
-                          className="w-full sm:w-auto py-3.5 px-4 glass-panel border border-neutral-200/80 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition flex items-center justify-center gap-2 cursor-pointer"
+                          onClick={handleConvertAnother}
+                          className="w-full sm:w-auto py-4 px-5 glass-panel border border-neutral-200/80 dark:border-white/10 rounded-2xl text-xs font-bold text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:border-amber-500/50 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
                         >
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>Copy Filename</span>
+                          <RotateCcw className="w-4 h-4 text-amber-500" />
+                          <span>Convert Another</span>
                         </button>
                       </div>
                     )}
-
-                    <AdSlot placement="post-conversion" />
                   </div>
                 )}
 
                 {/* PDF Compilation Result */}
                 {activeTool === 'images-to-pdf' && result?.downloadUrl && (
-                  <div className="mt-5 p-5 rounded-2xl glass-card border border-neutral-200 dark:border-neutral-800 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-mono truncate text-neutral-900 dark:text-neutral-200 max-w-[200px] sm:max-w-xs font-bold">
-                          {result.filename}
-                        </span>
-                        {result.sizeBytes && (
-                          <span className="font-mono text-neutral-400">
-                            {(result.sizeBytes / (1024 * 1024)).toFixed(2)} MB
-                          </span>
-                        )}
+                  <div className="mt-6 p-5 rounded-2xl glass-card border border-neutral-200 dark:border-neutral-800 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                          <Check className="w-4 h-4 stroke-[2.5]" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-sm text-emerald-950 dark:text-emerald-200">
+                            PDF Document Created!
+                          </div>
+                          <div className="text-[11px] text-neutral-600 dark:text-neutral-300">
+                            {files.length} images compiled into {result.filename} ({result.sizeBytes ? (result.sizeBytes > 1024 * 1024 ? `${(result.sizeBytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(result.sizeBytes / 1024)} KB`) : ''})
+                          </div>
+                        </div>
                       </div>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                        {files.length} Pages Compiled
-                      </span>
+
+                      <button
+                        onClick={handleConvertAnother}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-panel text-xs font-semibold text-neutral-800 dark:text-neutral-200 hover:border-amber-500/50 transition cursor-pointer self-start sm:self-auto"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Compile another PDF</span>
+                      </button>
                     </div>
 
-                    <a
-                      href={result.downloadUrl}
-                      download={result.filename}
-                      className="w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition shadow-md shadow-amber-500/20 cursor-pointer"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Download PDF Document</span>
-                    </a>
-
-                    <AdSlot placement="post-conversion" />
+                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                      <a
+                        href={result.downloadUrl}
+                        download={result.filename}
+                        className="flex-1 w-full py-4 px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition cursor-pointer ring-2 ring-amber-400/30"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Download PDF ({result.filename})</span>
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>
@@ -3556,6 +3821,7 @@ export function App() {
           </div>
         </div>
       </main>
+      )}
 
       {/* Minimalist Glass Footer */}
       <footer role="contentinfo" className="border-t border-neutral-200/60 dark:border-white/10 glass-panel py-8 px-4 text-xs text-neutral-500 dark:text-neutral-400 mt-auto relative z-10">
@@ -3563,10 +3829,10 @@ export function App() {
           <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
             <button
               type="button"
-              onClick={() => setIsAppLoading(true)}
-              title="Click to replay loading screen animation"
+              onClick={navigateToHome}
+              title="Isal.in Multi-Converter - Go to Homepage"
               className="cursor-pointer transition hover:opacity-90 active:scale-95 focus:outline-none"
-              aria-label="Replay loading screen"
+              aria-label="Isal.in Multi-Converter Home"
             >
               <BrandLogo size="sm" showWordmark={true} />
             </button>

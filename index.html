@@ -94,111 +94,126 @@
       })();
     </script>
     <style>
-      #initial-loader {
-        position: fixed;
-        inset: 0;
-        z-index: 99999;
+      /* App-Shell Layout Skeleton (Zero-latency pre-hydration UI matching actual workspace) */
+      .app-shell-skeleton {
+        min-height: 100vh;
+        background-color: #fafafa;
+        color: #171717;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background-color: #fafafa;
-        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
       }
-      html.dark #initial-loader {
+      html.dark .app-shell-skeleton {
         background-color: #0c0e14;
+        color: #f5f5f5;
       }
-      @keyframes isal-pre-spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+      @keyframes isal-shimmer {
+        0% { opacity: 0.5; }
+        50% { opacity: 0.85; }
+        100% { opacity: 0.5; }
       }
-      @keyframes isal-pre-reverse {
-        from { transform: rotate(360deg); }
-        to { transform: rotate(0deg); }
+      .sk-pulse {
+        animation: isal-shimmer 1.8s ease-in-out infinite;
       }
-      @keyframes isal-pre-sweep {
-        0% { transform: translateX(-100%); }
-        50% { transform: translateX(20%); }
-        100% { transform: translateX(100%); }
+      .sk-header {
+        height: 64px;
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1.5rem;
+        backdrop-filter: blur(12px);
       }
-      .pre-spinner {
-        animation: isal-pre-spin 2.8s linear infinite;
-        transform-origin: center;
-        filter: drop-shadow(0 8px 20px rgba(245,184,0,0.4));
+      html.dark .sk-header {
+        border-bottom: 1px solid rgba(255,255,255,0.08);
       }
-      .pre-orbit {
-        animation: isal-pre-reverse 16s linear infinite;
-        transform-origin: center;
+      .sk-brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
       }
-      .pre-progress-sweep {
-        animation: isal-pre-sweep 1.6s ease-in-out infinite;
+      .sk-tagline {
+        font-size: 11px;
+        font-style: italic;
+        color: #d97706;
+        padding-left: 12px;
+        border-left: 1px solid rgba(0,0,0,0.1);
+        display: none;
+      }
+      @media (min-width: 640px) {
+        .sk-tagline { display: block; }
+      }
+      html.dark .sk-tagline {
+        border-left: 1px solid rgba(255,255,255,0.1);
+        color: #fbbf24;
+      }
+      .sk-box {
+        border-radius: 12px;
+        background: rgba(0,0,0,0.06);
+      }
+      html.dark .sk-box {
+        background: rgba(255,255,255,0.06);
+      }
+      .sk-main {
+        max-width: 1024px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
       }
     </style>
   </head>
   <body>
     <div id="root">
-      <div id="initial-loader" role="status" aria-label="Loading Isal.in Multi-Converter">
-        <div style="position: relative; width: 128px; height: 128px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
-          <!-- Orbit Ring -->
-          <svg class="pre-orbit" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.45;" viewBox="0 0 128 128" fill="none">
-            <circle cx="64" cy="64" r="60" stroke="#F5B800" stroke-width="1.5" stroke-dasharray="6 8" stroke-linecap="round" />
-            <circle cx="64" cy="4" r="3" fill="#F5B800" />
-          </svg>
-          <!-- Spinning Philippine Sun Logo -->
-          <svg class="pre-spinner" width="80" height="80" viewBox="256 124 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <clipPath id="pre_disc"><circle r="128" /></clipPath>
-              <linearGradient id="pre_sun" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#FFD83A" />
-                <stop offset="1" stop-color="#F5B800" />
-              </linearGradient>
-            </defs>
-            <g transform="translate(512 380)">
-              <g fill="url(#pre_sun)">
-                <polygon points="-29.1,-147.1 0.0,-232.0 29.1,-147.1" />
-                <polygon points="35.5,-145.7 76.5,-184.8 77.9,-128.2" />
-                <polygon points="83.4,-124.6 164.0,-164.0 124.6,-83.4" />
-                <polygon points="128.2,-77.9 184.8,-76.5 145.7,-35.5" />
-                <polygon points="147.1,-29.1 232.0,0.0 147.1,29.1" />
-                <polygon points="145.7,35.5 184.8,76.5 128.2,77.9" />
-                <polygon points="124.6,83.4 164.0,164.0 83.4,124.6" />
-                <polygon points="77.9,128.2 76.5,184.8 35.5,145.7" />
-                <polygon points="29.1,147.1 0.0,232.0 -29.1,147.1" />
-                <polygon points="-35.5,145.7 -76.5,184.8 -77.9,128.2" />
-                <polygon points="-83.4,124.6 -164.0,164.0 -124.6,83.4" />
-                <polygon points="-128.2,77.9 -184.8,76.5 -145.7,35.5" />
-                <polygon points="-147.1,29.1 -232.0,0.0 -147.1,-29.1" />
-                <polygon points="-145.7,-35.5 -184.8,-76.5 -128.2,-77.9" />
-                <polygon points="-124.6,-83.4 -164.0,-164.0 -83.4,-124.6" />
-                <polygon points="-77.9,-128.2 -76.5,-184.8 -35.5,-145.7" />
-              </g>
-              <circle r="146" fill="#FCD116" />
-              <g clip-path="url(#pre_disc)">
-                <rect x="-130" y="-130" width="260" height="260" fill="#0038A8" />
-                <polygon points="130,-130 130,130 -130,130" fill="#CE1126" />
-              </g>
-              <circle r="128" fill="none" stroke="#fff" stroke-width="5" opacity="0.9" />
-              <g fill="none" stroke="#fff" stroke-width="17" stroke-linecap="round">
-                <path d="M-62.0 -22.6 A66 66 0 0 1 37.9 -54.1" />
-                <path d="M62.0 22.6 A66 66 0 0 1 -37.9 54.1" />
-              </g>
-              <g fill="#fff" stroke="#fff" stroke-width="4" stroke-linejoin="round">
-                <polygon points="24.1,-34.4 62.4,-36.9 51.6,-73.7" />
-                <polygon points="-24.1,34.4 -62.4,36.9 -51.6,73.7" />
-              </g>
-            </g>
-          </svg>
-        </div>
-        <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 24px; letter-spacing: -0.025em; margin-bottom: 4px;">
-          <span style="color: #0038A8;">isal</span>
-          <span style="width: 10px; height: 10px; border-radius: 9999px; background-color: #F5B800; display: inline-block;"></span>
-          <span style="color: #CE1126;">in</span>
-        </div>
-        <div style="font-size: 10px; font-family: monospace; letter-spacing: 0.25em; text-transform: uppercase; color: #888; font-weight: 600; margin-bottom: 8px;">MULTI-CONVERTER</div>
-        <div style="font-size: 12px; font-style: italic; font-weight: 500; color: #d97706; margin-bottom: 16px;">"Isalin ang lahat. Convert anything."</div>
-        <div style="width: 192px; height: 4px; border-radius: 9999px; background: rgba(150, 150, 150, 0.2); overflow: hidden; position: relative;">
-          <div class="pre-progress-sweep" style="position: absolute; inset: 0; background: linear-gradient(90deg, transparent, #F5B800, transparent); width: 100%;"></div>
-        </div>
+      <!-- Pre-hydration Zero-Latency App-Shell Skeleton -->
+      <div class="app-shell-skeleton" aria-label="Loading Isal.in Multi-Converter">
+        <header class="sk-header">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="sk-brand">
+              <span style="color: #0038A8;">isal</span><span style="width: 8px; height: 8px; border-radius: 50%; background-color: #F5B800; display: inline-block;"></span><span style="color: #CE1126;">in</span>
+            </div>
+            <div class="sk-tagline font-medium">"Isalin ang lahat. Convert anything."</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="sk-box sk-pulse" style="width: 160px; height: 36px; border-radius: 12px;"></div>
+            <div class="sk-box sk-pulse" style="width: 36px; height: 36px; border-radius: 12px;"></div>
+          </div>
+        </header>
+        <main class="sk-main">
+          <!-- Category Tabs Skeleton -->
+          <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px;">
+            <div class="sk-box sk-pulse" style="width: 100px; height: 36px; border-radius: 12px; background: rgba(245, 184, 0, 0.2);"></div>
+            <div class="sk-box sk-pulse" style="width: 120px; height: 36px; border-radius: 12px;"></div>
+            <div class="sk-box sk-pulse" style="width: 130px; height: 36px; border-radius: 12px;"></div>
+            <div class="sk-box sk-pulse" style="width: 140px; height: 36px; border-radius: 12px;"></div>
+            <div class="sk-box sk-pulse" style="width: 130px; height: 36px; border-radius: 12px;"></div>
+          </div>
+          <!-- Hero / Search Skeleton -->
+          <div style="text-align: center; margin: 1.5rem 0 0.5rem; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+            <div class="sk-box sk-pulse" style="width: 240px; height: 24px; border-radius: 9999px;"></div>
+            <div class="sk-box sk-pulse" style="width: min(540px, 90vw); height: 48px; border-radius: 16px;"></div>
+            <div class="sk-box sk-pulse" style="width: min(420px, 80vw); height: 20px; border-radius: 8px;"></div>
+          </div>
+          <!-- Dual Panel Converter Workspace Skeleton -->
+          <div class="sk-box" style="padding: 24px; border-radius: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="sk-box sk-pulse" style="width: 120px; height: 16px; border-radius: 6px;"></div>
+              <div class="sk-box sk-pulse" style="width: 100%; height: 56px; border-radius: 16px;"></div>
+              <div class="sk-box sk-pulse" style="width: 180px; height: 24px; border-radius: 8px;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div class="sk-box sk-pulse" style="width: 120px; height: 16px; border-radius: 6px;"></div>
+              <div class="sk-box sk-pulse" style="width: 100%; height: 56px; border-radius: 16px; background: rgba(14, 165, 233, 0.15);"></div>
+              <div class="sk-box sk-pulse" style="width: 140px; height: 24px; border-radius: 8px;"></div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

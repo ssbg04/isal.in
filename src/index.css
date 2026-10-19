@@ -14,26 +14,43 @@
     font-family: var(--font-sans);
   }
 
-  /* Sleek modern custom scrollbar */
+  /* Vibrant Philippine Golden Sun Themed Scrollbar */
+  html {
+    scrollbar-color: #d97706 rgba(0, 0, 0, 0.05);
+    scrollbar-width: thin;
+  }
+  html.dark,
+  .dark {
+    scrollbar-color: #f59e0b rgba(12, 14, 20, 0.6);
+  }
+
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(0, 0, 0, 0.04);
+  }
+  .dark ::-webkit-scrollbar-track {
+    background: rgba(12, 14, 20, 0.6);
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(156, 163, 175, 0.3);
+    background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
     border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(156, 163, 175, 0.5);
+    background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
   }
   .dark ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);
+    border-radius: 9999px;
+    border: 2px solid rgba(12, 14, 20, 0.4);
+    background-clip: padding-box;
   }
   .dark ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
   }
 }
 

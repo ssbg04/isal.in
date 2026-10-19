@@ -30,8 +30,12 @@ import {
   GraduationCap,
   Music,
   Video,
+  Copy,
+  Check,
+  ArrowRight,
 } from 'lucide-react';
 import type { ToolType } from '../services/conversionService';
+import { parseNaturalLanguageConversion } from '../services/naturalLanguageService';
 
 export interface ToolMeta {
   id: ToolType;
@@ -53,28 +57,28 @@ const TOOL_ICONS: Record<ToolType, React.ReactNode> = {
   'images-to-pdf': <FileText className="w-4 h-4 text-rose-500" />,
   'audio-convert': <Music className="w-4 h-4 text-amber-500" />,
   'video-convert': <Video className="w-4 h-4 text-rose-500" />,
-  'json-yaml': <Code2 className="w-4 h-4 text-sky-500" />,
-  'base64': <ArrowRightLeft className="w-4 h-4 text-emerald-500" />,
+  'json-yaml': <Code2 className="w-4 h-4 text-blue-500" />,
+  'base64': <ArrowRightLeft className="w-4 h-4 text-amber-600" />,
   'url-encode': <Link className="w-4 h-4 text-blue-500" />,
-  'uuid': <Hash className="w-4 h-4 text-purple-500" />,
-  'color-convert': <Palette className="w-4 h-4 text-pink-500" />,
-  'markdown-html': <BookOpen className="w-4 h-4 text-indigo-500" />,
-  'csv-json': <Table className="w-4 h-4 text-emerald-500" />,
-  'hash-calc': <Fingerprint className="w-4 h-4 text-teal-500" />,
-  'unit-convert': <Ruler className="w-4 h-4 text-cyan-500" />,
-  'length-convert': <Ruler className="w-4 h-4 text-sky-500" />,
+  'uuid': <Hash className="w-4 h-4 text-blue-600" />,
+  'color-convert': <Palette className="w-4 h-4 text-amber-500" />,
+  'markdown-html': <BookOpen className="w-4 h-4 text-blue-600" />,
+  'csv-json': <Table className="w-4 h-4 text-blue-500" />,
+  'hash-calc': <Fingerprint className="w-4 h-4 text-amber-600" />,
+  'unit-convert': <Ruler className="w-4 h-4 text-blue-500" />,
+  'length-convert': <Ruler className="w-4 h-4 text-blue-500" />,
   'mass-convert': <Scale className="w-4 h-4 text-amber-500" />,
-  'area-convert': <Maximize2 className="w-4 h-4 text-emerald-500" />,
+  'area-convert': <Maximize2 className="w-4 h-4 text-blue-600" />,
   'volume-convert': <Box className="w-4 h-4 text-blue-500" />,
   'temperature-convert': <Thermometer className="w-4 h-4 text-rose-500" />,
-  'speed-convert': <Gauge className="w-4 h-4 text-purple-500" />,
-  'time-convert': <Clock className="w-4 h-4 text-cyan-500" />,
-  'number-system': <Binary className="w-4 h-4 text-teal-500" />,
-  'income-tax-ph': <Coins className="w-4 h-4 text-emerald-500" />,
-  'mortgage-calc': <Home className="w-4 h-4 text-sky-500" />,
+  'speed-convert': <Gauge className="w-4 h-4 text-amber-500" />,
+  'time-convert': <Clock className="w-4 h-4 text-blue-500" />,
+  'number-system': <Binary className="w-4 h-4 text-blue-600" />,
+  'income-tax-ph': <Coins className="w-4 h-4 text-emerald-600" />,
+  'mortgage-calc': <Home className="w-4 h-4 text-blue-600" />,
   'electricity-calc': <Zap className="w-4 h-4 text-amber-500" />,
   'bmi-calc': <Heart className="w-4 h-4 text-rose-500" />,
-  'gwa-calc': <GraduationCap className="w-4 h-4 text-indigo-500" />,
+  'gwa-calc': <GraduationCap className="w-4 h-4 text-rose-600" />,
 };
 
 const TOOL_ALIASES: Record<ToolType, string[]> = {
@@ -122,8 +126,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const [query, setQuery] = useState<string>('');
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [clipboardData, setClipboardData] = useState<ClipboardDetection | null>(null);
+  const [copiedQuick, setCopiedQuick] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsContainerRef = useRef<HTMLDivElement>(null);
+
+  const quickResult = useMemo(() => parseNaturalLanguageConversion(query), [query]);
+
+  const handleCopyQuick = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedQuick(true);
+    setTimeout(() => setCopiedQuick(false), 2000);
+  };
 
   // Focus search input and detect clipboard on open
   useEffect(() => {
@@ -131,6 +144,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       const focusTimer = setTimeout(() => {
         setQuery('');
         setSelectedIndex(0);
+        setCopiedQuick(false);
         inputRef.current?.focus();
       }, 20);
 
@@ -292,7 +306,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               setQuery(e.target.value);
               setSelectedIndex(0);
             }}
-            placeholder="Search tools or features... (e.g. JSON, WebP, base64, hash, rem)"
+            placeholder="Type shorthand (e.g. 250 usd to php, 180 cm in ft, 70 kg to lbs, png to webp) or search tools..."
             className="flex-1 bg-transparent text-sm font-medium text-neutral-900 dark:text-white placeholder-neutral-400 outline-none"
           />
           {query ? (
@@ -309,6 +323,52 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             </kbd>
           )}
         </div>
+
+        {/* Natural Language Quick Calculation Result Card */}
+        {quickResult && (
+          <div className="mx-3 sm:mx-4 mt-3 p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-sky-500/10 to-amber-500/10 border border-amber-500/30 text-xs shadow-md animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
+                <Sparkles className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <span>Instant Conversion ({quickResult.categoryName})</span>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-300 font-bold border border-amber-500/30">
+                ⚡ 0ms Engine
+              </span>
+            </div>
+
+            <div className="text-base sm:text-lg font-bold font-mono text-neutral-950 dark:text-white tabular-nums my-1 select-all">
+              {quickResult.formattedOutput}
+            </div>
+
+            <p className="text-[11px] text-neutral-600 dark:text-neutral-300 mb-2.5">
+              {quickResult.summary}
+            </p>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleCopyQuick(quickResult.outputValue)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 font-semibold text-xs transition hover:opacity-90 active:scale-95 cursor-pointer shadow-xs focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+              >
+                {copiedQuick ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedQuick ? 'Copied!' : 'Copy Result'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectTool(quickResult.toolId);
+                  onClose();
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-panel border border-neutral-300 dark:border-white/10 text-neutral-800 dark:text-neutral-200 hover:text-amber-700 dark:hover:text-amber-400 font-semibold text-xs transition cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+              >
+                <span>Open in Converter</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Smart Clipboard Quick Banner */}
         {clipboardData && !query && (
