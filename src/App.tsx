@@ -36,6 +36,7 @@ import { CategoryFilter } from './components/CategoryFilter';
 import { PrivacyModal } from './components/PrivacyModal';
 import { BrandLogo } from './components/BrandLogo';
 import { ImageCompareSlider } from './components/ImageCompareSlider';
+import { DualPaneCodeWorkspace } from './components/DualPaneCodeWorkspace';
 import type {
   ToolType,
   ConversionResult,
@@ -221,6 +222,7 @@ export function App() {
   const [base64Mode, setBase64Mode] = useState<'encode' | 'decode'>('encode');
   const [urlMode, setUrlMode] = useState<'encode' | 'decode'>('encode');
   const [uuidCount, setUuidCount] = useState<number>(5);
+  const [autoTransform, setAutoTransform] = useState<boolean>(true);
   // CSV / TSV / Table utility state
   const [csvMode, setCsvMode] = useState<'csv-to-json' | 'json-to-csv'>('csv-to-json');
   const [csvDelimiter, setCsvDelimiter] = useState<string>(',');
@@ -547,6 +549,68 @@ export function App() {
     csvHasHeader,
     csvIndentation,
   ]);
+
+  // Real-time live transformation for Code & Data utilities
+  useEffect(() => {
+    if (!autoTransform) return;
+    if (!['json-yaml', 'base64', 'url-encode'].includes(activeTool)) return;
+
+    const timer = setTimeout(async () => {
+      if (!textInput.trim()) {
+        setTextOutput('');
+        return;
+      }
+      try {
+        if (activeTool === 'json-yaml') {
+          const out = await convertJsonYaml(textInput, jsonDirection);
+          setTextOutput(out);
+          setErrorMsg(null);
+        } else if (activeTool === 'base64') {
+          const out = processBase64(textInput, base64Mode);
+          setTextOutput(out);
+          setErrorMsg(null);
+        } else if (activeTool === 'url-encode') {
+          const out = processUrlEncode(textInput, urlMode);
+          setTextOutput(out);
+          setErrorMsg(null);
+        }
+      } catch {
+        // Suppress syntax error while user is in the middle of typing
+      }
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [textInput, activeTool, jsonDirection, base64Mode, urlMode, autoTransform]);
+
+  const handleSwapJsonYaml = () => {
+    const nextDir = jsonDirection === 'json-to-yaml' ? 'yaml-to-json' : 'json-to-yaml';
+    setJsonDirection(nextDir);
+    if (textOutput) {
+      const prevOut = textOutput;
+      setTextInput(prevOut);
+      setTextOutput(textInput);
+    }
+  };
+
+  const handleSwapBase64 = () => {
+    const nextMode = base64Mode === 'encode' ? 'decode' : 'encode';
+    setBase64Mode(nextMode);
+    if (textOutput) {
+      const prevOut = textOutput;
+      setTextInput(prevOut);
+      setTextOutput(textInput);
+    }
+  };
+
+  const handleSwapUrl = () => {
+    const nextMode = urlMode === 'encode' ? 'decode' : 'encode';
+    setUrlMode(nextMode);
+    if (textOutput) {
+      const prevOut = textOutput;
+      setTextInput(prevOut);
+      setTextOutput(textInput);
+    }
+  };
 
   const handleDownloadZip = async () => {
     if (!batchResults.length) return;
@@ -1337,146 +1401,147 @@ export function App() {
               </div>
             )}
 
-            {/* Developer Utility Tools Workspace */}
-            {['json-yaml', 'base64', 'url-encode', 'uuid'].includes(activeTool) && (
+            {/* Developer Code & Data Utilities Dual-Pane Workspace */}
+            {['json-yaml', 'base64', 'url-encode'].includes(activeTool) && (
+              <div className="mt-5">
+                <DualPaneCodeWorkspace
+                  inputTitle={
+                    activeTool === 'json-yaml'
+                      ? jsonDirection === 'json-to-yaml' ? 'JSON Input' : 'YAML Input'
+                      : activeTool === 'base64'
+                      ? base64Mode === 'encode' ? 'Plain Text Source' : 'Base64 Encoded Text'
+                      : urlMode === 'encode' ? 'Raw URL / Query String' : 'Percent-Encoded URL'
+                  }
+                  outputTitle={
+                    activeTool === 'json-yaml'
+                      ? jsonDirection === 'json-to-yaml' ? 'YAML Output' : 'JSON Output'
+                      : activeTool === 'base64'
+                      ? base64Mode === 'encode' ? 'Base64 Encoded Output' : 'Decoded Plain Text'
+                      : urlMode === 'encode' ? 'Percent-Encoded Output' : 'Decoded URL'
+                  }
+                  inputBadge={
+                    activeTool === 'json-yaml'
+                      ? jsonDirection === 'json-to-yaml' ? 'JSON' : 'YAML'
+                      : activeTool === 'base64'
+                      ? base64Mode === 'encode' ? 'TEXT' : 'BASE64'
+                      : urlMode === 'encode' ? 'RAW URL' : 'ENCODED'
+                  }
+                  outputBadge={
+                    activeTool === 'json-yaml'
+                      ? jsonDirection === 'json-to-yaml' ? 'YAML' : 'JSON'
+                      : activeTool === 'base64'
+                      ? base64Mode === 'encode' ? 'BASE64' : 'TEXT'
+                      : urlMode === 'encode' ? 'ENCODED' : 'RAW URL'
+                  }
+                  outputFileExtension={
+                    activeTool === 'json-yaml'
+                      ? jsonDirection === 'json-to-yaml' ? 'yaml' : 'json'
+                      : activeTool === 'base64'
+                      ? base64Mode === 'encode' ? 'b64' : 'txt'
+                      : 'txt'
+                  }
+                  inputValue={textInput}
+                  outputValue={textOutput}
+                  onInputChange={setTextInput}
+                  onTransform={handleConvert}
+                  onSwap={
+                    activeTool === 'json-yaml'
+                      ? handleSwapJsonYaml
+                      : activeTool === 'base64'
+                      ? handleSwapBase64
+                      : handleSwapUrl
+                  }
+                  onLoadSample={() => {
+                    if (activeTool === 'json-yaml') {
+                      if (jsonDirection === 'json-to-yaml') {
+                        const sample = `{\n  "appName": "Multi-Converter",\n  "version": "2.4.0",\n  "privacy": "100% Client-Side",\n  "features": [\n    "Dual-pane workspace",\n    "Live transform",\n    "Zero server uploads"\n  ]\n}`;
+                        setTextInput(sample);
+                        convertJsonYaml(sample, 'json-to-yaml').then(setTextOutput).catch(() => {});
+                      } else {
+                        const sample = `appName: Multi-Converter\nversion: 2.4.0\nprivacy: 100% Client-Side\nfeatures:\n  - Dual-pane workspace\n  - Live transform\n  - Zero server uploads\n`;
+                        setTextInput(sample);
+                        convertJsonYaml(sample, 'yaml-to-json').then(setTextOutput).catch(() => {});
+                      }
+                    } else if (activeTool === 'base64') {
+                      if (base64Mode === 'encode') {
+                        const sample = 'Multi-Converter: Fast, private, client-side developer toolbox ⚡';
+                        setTextInput(sample);
+                        setTextOutput(processBase64(sample, 'encode'));
+                      } else {
+                        const sample = 'TXVsdGktQ29udmVydGVyOiBGYXN0LCBwcml2YXRlLCBjbGllbnQtc2lkZSBkZXZlbG9wZXIgdG9vbGJveCDimao=';
+                        setTextInput(sample);
+                        setTextOutput(processBase64(sample, 'decode'));
+                      }
+                    } else if (activeTool === 'url-encode') {
+                      if (urlMode === 'encode') {
+                        const sample = 'https://multi-converter.app/search?query=developer tools & privacy=100% private&category=code & data';
+                        setTextInput(sample);
+                        setTextOutput(processUrlEncode(sample, 'encode'));
+                      } else {
+                        const sample = 'https%3A%2F%2Fmulti-converter.app%2Fsearch%3Fquery%3Ddeveloper%20tools%20%26%20privacy%3D100%25%20private%26category%3Dcode%20%26%20data';
+                        setTextInput(sample);
+                        setTextOutput(processUrlEncode(sample, 'decode'));
+                      }
+                    }
+                  }}
+                  autoTransform={autoTransform}
+                  onAutoTransformChange={setAutoTransform}
+                  isProcessing={isProcessing}
+                />
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+
+            {/* UUID Generator Workspace */}
+            {activeTool === 'uuid' && (
               <div className="mt-5 space-y-4">
-                {/* Mode Selectors */}
-                <div className="flex flex-wrap items-center gap-3">
-                  {activeTool === 'json-yaml' && (
-                    <div className="inline-flex rounded-xl glass-panel p-1 text-xs shadow-2xs">
-                      <button
-                        onClick={() => setJsonDirection('json-to-yaml')}
-                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
-                          jsonDirection === 'json-to-yaml'
-                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
-                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                        }`}
-                      >
-                        JSON → YAML
-                      </button>
-                      <button
-                        onClick={() => setJsonDirection('yaml-to-json')}
-                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
-                          jsonDirection === 'yaml-to-json'
-                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
-                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                        }`}
-                      >
-                        YAML → JSON
-                      </button>
-                    </div>
-                  )}
-
-                  {activeTool === 'base64' && (
-                    <div className="inline-flex rounded-xl glass-panel p-1 text-xs shadow-2xs">
-                      <button
-                        onClick={() => setBase64Mode('encode')}
-                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
-                          base64Mode === 'encode'
-                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
-                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                        }`}
-                      >
-                        Encode
-                      </button>
-                      <button
-                        onClick={() => setBase64Mode('decode')}
-                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
-                          base64Mode === 'decode'
-                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
-                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                        }`}
-                      >
-                        Decode
-                      </button>
-                    </div>
-                  )}
-
-                  {activeTool === 'url-encode' && (
-                    <div className="inline-flex rounded-xl glass-panel p-1 text-xs shadow-2xs">
-                      <button
-                        onClick={() => setUrlMode('encode')}
-                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
-                          urlMode === 'encode'
-                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
-                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                        }`}
-                      >
-                        Encode
-                      </button>
-                      <button
-                        onClick={() => setUrlMode('decode')}
-                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
-                          urlMode === 'decode'
-                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
-                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
-                        }`}
-                      >
-                        Decode
-                      </button>
-                    </div>
-                  )}
-
-                  {activeTool === 'uuid' && (
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-neutral-500">Count:</span>
-                      <select
-                        value={uuidCount}
-                        onChange={(e) => setUuidCount(parseInt(e.target.value))}
-                        className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg px-2.5 py-1 text-xs text-neutral-900 dark:text-neutral-100 outline-none"
-                      >
-                        <option value={1}>1</option>
-                        <option value={5}>5</option>
-                        <option value={10}>10</option>
-                        <option value={20}>20</option>
-                      </select>
-                    </div>
-                  )}
-                </div>
-
-                {/* Text Input Area */}
-                {activeTool !== 'uuid' && (
-                  <div>
-                    <textarea
-                      rows={6}
-                      value={textInput}
-                      onChange={(e) => setTextInput(e.target.value)}
-                      placeholder="Paste text, JSON, or code string here..."
-                      className="w-full bg-white/70 dark:bg-[#0c0e14]/70 border border-neutral-200/80 dark:border-white/10 rounded-2xl p-4 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/60 dark:focus:border-amber-400/50 transition resize-y shadow-inner"
-                    />
+                <div className="flex items-center justify-between p-3 rounded-2xl glass-panel">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-neutral-600 dark:text-neutral-400 font-semibold">Generate Count:</span>
+                    <select
+                      value={uuidCount}
+                      onChange={(e) => setUuidCount(parseInt(e.target.value))}
+                      className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-white/10 rounded-xl px-3 py-1.5 text-xs font-mono text-neutral-900 dark:text-neutral-100 outline-none"
+                    >
+                      <option value={1}>1 UUID</option>
+                      <option value={5}>5 UUIDs</option>
+                      <option value={10}>10 UUIDs</option>
+                      <option value={20}>20 UUIDs</option>
+                      <option value={50}>50 UUIDs</option>
+                    </select>
                   </div>
-                )}
+                  <span className="text-[11px] font-mono text-neutral-400">RFC 4122 v4 Compliant</span>
+                </div>
 
                 <button
                   onClick={handleConvert}
-                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-bold text-sm rounded-xl transition shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  <span>{activeTool === 'uuid' ? 'Generate UUIDs' : 'Transform Input'}</span>
+                  <span>Generate UUIDs</span>
                   <kbd className="hidden sm:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/15 text-neutral-900">
                     Ctrl+↵
                   </kbd>
                 </button>
 
-                {/* Text Output Result */}
                 {textOutput && (
                   <div className="space-y-2 pt-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-500">
-                        Result
+                        Generated Identifiers
                       </span>
                       <button
                         onClick={() => copyToClipboard(textOutput)}
-                        className="inline-flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition font-medium"
+                        className="inline-flex items-center gap-1 text-xs text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition font-medium cursor-pointer"
                       >
                         {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copied ? 'Copied' : 'Copy'}</span>
+                        <span>{copied ? 'Copied' : 'Copy All'}</span>
                       </button>
                     </div>
                     <textarea
-                      rows={6}
+                      rows={Math.min(uuidCount + 2, 12)}
                       readOnly
                       value={textOutput}
-                      className="w-full bg-neutral-100 dark:bg-neutral-950/80 border border-neutral-200 dark:border-neutral-800 rounded-xl p-3.5 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-200 outline-none resize-y"
+                      className="w-full bg-neutral-100/70 dark:bg-[#0c0e14]/90 border border-neutral-200/70 dark:border-white/5 rounded-2xl p-4 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-200 outline-none resize-y leading-relaxed"
                     />
                     <AdSlot placement="post-conversion" />
                   </div>
