@@ -8,9 +8,11 @@ import {
   Shield,
   LayoutGrid,
   ListFilter,
+  Ruler,
+  Calculator,
 } from 'lucide-react';
 
-export type CategoryId = 'all' | 'media' | 'developer' | 'security';
+export type CategoryId = 'all' | 'media' | 'developer' | 'security' | 'units' | 'calculators';
 
 export interface CategoryItem {
   id: CategoryId;
@@ -19,7 +21,7 @@ export interface CategoryItem {
 }
 
 interface CategoryFilterProps {
-  categories: { id: 'media' | 'developer' | 'security'; label: string; count: number }[];
+  categories: { id: 'media' | 'developer' | 'security' | 'units' | 'calculators'; label: string; count: number }[];
   selectedCategory: CategoryId;
   onSelectCategory: (id: CategoryId) => void;
   totalToolsCount: number;
@@ -30,6 +32,8 @@ const CATEGORY_ICONS: Record<CategoryId, React.ComponentType<{ className?: strin
   media: FileImage,
   developer: Code2,
   security: Shield,
+  units: Ruler,
+  calculators: Calculator,
 };
 
 export const CategoryFilter: React.FC<CategoryFilterProps> = ({

@@ -9,7 +9,20 @@ export type ToolType =
   | 'markdown-html'
   | 'csv-json'
   | 'hash-calc'
-  | 'unit-convert';
+  | 'unit-convert'
+  | 'length-convert'
+  | 'mass-convert'
+  | 'area-convert'
+  | 'volume-convert'
+  | 'temperature-convert'
+  | 'speed-convert'
+  | 'time-convert'
+  | 'number-system'
+  | 'income-tax-ph'
+  | 'mortgage-calc'
+  | 'electricity-calc'
+  | 'bmi-calc'
+  | 'gwa-calc';
 
 export interface ConversionResult {
   filename: string;

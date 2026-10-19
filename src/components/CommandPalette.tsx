@@ -16,13 +16,25 @@ import {
   CornerDownLeft,
   Sparkles,
   Clipboard,
+  Scale,
+  Maximize2,
+  Box,
+  Thermometer,
+  Gauge,
+  Clock,
+  Binary,
+  Coins,
+  Home,
+  Zap,
+  Heart,
+  GraduationCap,
 } from 'lucide-react';
 import type { ToolType } from '../services/conversionService';
 
 export interface ToolMeta {
   id: ToolType;
   title: string;
-  category: 'media' | 'developer' | 'security';
+  category: 'media' | 'developer' | 'security' | 'units' | 'calculators';
   shortDesc: string;
   badge: string;
 }
@@ -46,6 +58,19 @@ const TOOL_ICONS: Record<ToolType, React.ReactNode> = {
   'csv-json': <Table className="w-4 h-4 text-emerald-500" />,
   'hash-calc': <Fingerprint className="w-4 h-4 text-teal-500" />,
   'unit-convert': <Ruler className="w-4 h-4 text-cyan-500" />,
+  'length-convert': <Ruler className="w-4 h-4 text-sky-500" />,
+  'mass-convert': <Scale className="w-4 h-4 text-amber-500" />,
+  'area-convert': <Maximize2 className="w-4 h-4 text-emerald-500" />,
+  'volume-convert': <Box className="w-4 h-4 text-blue-500" />,
+  'temperature-convert': <Thermometer className="w-4 h-4 text-rose-500" />,
+  'speed-convert': <Gauge className="w-4 h-4 text-purple-500" />,
+  'time-convert': <Clock className="w-4 h-4 text-cyan-500" />,
+  'number-system': <Binary className="w-4 h-4 text-teal-500" />,
+  'income-tax-ph': <Coins className="w-4 h-4 text-emerald-500" />,
+  'mortgage-calc': <Home className="w-4 h-4 text-sky-500" />,
+  'electricity-calc': <Zap className="w-4 h-4 text-amber-500" />,
+  'bmi-calc': <Heart className="w-4 h-4 text-rose-500" />,
+  'gwa-calc': <GraduationCap className="w-4 h-4 text-indigo-500" />,
 };
 
 const TOOL_ALIASES: Record<ToolType, string[]> = {
@@ -60,6 +85,19 @@ const TOOL_ALIASES: Record<ToolType, string[]> = {
   'csv-json': ['csv', 'tsv', 'tab', 'excel', 'table', 'spreadsheet', 'array'],
   'hash-calc': ['hash', 'sha256', 'sha512', 'md5', 'checksum', 'integrity', 'crypto'],
   'unit-convert': ['unit', 'rem', 'px', 'css', 'byte', 'mb', 'gb', 'tb', 'epoch', 'timestamp', 'time'],
+  'length-convert': ['length', 'distance', 'meter', 'kilometer', 'centimeter', 'millimeter', 'inch', 'feet', 'yard', 'mile', 'nautical'],
+  'mass-convert': ['mass', 'weight', 'kilogram', 'gram', 'pound', 'lb', 'ounce', 'oz', 'ton', 'stone'],
+  'area-convert': ['area', 'sqm', 'square meter', 'hectare', 'acre', 'sqft', 'square foot', 'land'],
+  'volume-convert': ['volume', 'capacity', 'liter', 'milliliter', 'gallon', 'cup', 'fluid ounce', 'tablespoon', 'teaspoon', 'cubic'],
+  'temperature-convert': ['temperature', 'temp', 'celsius', 'fahrenheit', 'kelvin', 'rankine', 'weather'],
+  'speed-convert': ['speed', 'velocity', 'kmh', 'mph', 'knot', 'mach', 'fast'],
+  'time-convert': ['time', 'duration', 'seconds', 'minutes', 'hours', 'days', 'weeks', 'months', 'years'],
+  'number-system': ['number', 'binary', 'hex', 'hexadecimal', 'octal', 'decimal', 'radix', 'base', 'ascii', 'roman', 'nibble'],
+  'income-tax-ph': ['tax', 'income tax', 'philippines', 'train law', 'salary', 'payslip', 'sss', 'philhealth', 'pagibig', 'withholding', 'take home pay', 'bir'],
+  'mortgage-calc': ['mortgage', 'loan', 'housing', 'amortization', 'pagibig', 'bank loan', 'interest', 'real estate', 'monthly payment'],
+  'electricity-calc': ['electricity', 'submeter', 'meralco', 'electric bill', 'kwh', 'appliance', 'aircon', 'tenant', 'splitter', 'wattage'],
+  'bmi-calc': ['bmi', 'body mass index', 'health', 'weight', 'height', 'obese', 'underweight', 'overweight', 'fitness'],
+  'gwa-calc': ['gwa', 'gpa', 'grade', 'philippines', 'college', 'university', 'latin honors', 'summa cum laude', 'magna', 'cum laude', 'deans list', 'ched', 'up'],
 };
 
 interface ClipboardDetection {

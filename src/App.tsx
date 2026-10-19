@@ -29,6 +29,17 @@ import {
   Ruler,
   HardDrive,
   Clock,
+  Scale,
+  Maximize2,
+  Box,
+  Thermometer,
+  Gauge,
+  Binary,
+  Coins,
+  Home,
+  Zap,
+  Heart,
+  GraduationCap,
 } from 'lucide-react';
 import { AdSlot } from './components/AdSlot';
 import { CategoryFilter } from './components/CategoryFilter';
@@ -43,6 +54,13 @@ import {
   type PresetWorkflow,
 } from './components/HistoryPresetsDrawer';
 import { BatchQueueManager } from './components/BatchQueueManager';
+import { UnitConverterTool } from './components/tools/UnitConverterTool';
+import { NumberSystemConverter } from './components/tools/NumberSystemConverter';
+import { PhilippineTaxCalculator } from './components/tools/PhilippineTaxCalculator';
+import { MortgageCalculator } from './components/tools/MortgageCalculator';
+import { ElectricityCalculator } from './components/tools/ElectricityCalculator';
+import { BmiCalculator } from './components/tools/BmiCalculator';
+import { PhilippineGwaCalculator } from './components/tools/PhilippineGwaCalculator';
 import type {
   ToolType,
   ConversionResult,
@@ -73,7 +91,7 @@ import {
 } from './services/conversionService';
 import { APP_LIMITS } from './config/limits';
 
-type Category = 'media' | 'developer' | 'security';
+type Category = 'media' | 'developer' | 'security' | 'units' | 'calculators';
 
 interface ToolMeta {
   id: ToolType;
@@ -156,10 +174,103 @@ const TOOLS: ToolMeta[] = [
   },
   {
     id: 'unit-convert',
-    title: 'Unit & Dev Converter',
+    title: 'CSS & Dev Unit Converter',
     category: 'developer',
     shortDesc: 'CSS px ⇄ rem typography, byte storage scaling, and Unix epoch timestamp decoder',
     badge: 'Utility',
+  },
+  // Measurement & Unit Converters
+  {
+    id: 'length-convert',
+    title: 'Length & Distance Converter',
+    category: 'units',
+    shortDesc: 'Meters, kilometers, centimeters, feet, inches, yards, and nautical miles',
+    badge: 'Units',
+  },
+  {
+    id: 'mass-convert',
+    title: 'Mass & Weight Converter',
+    category: 'units',
+    shortDesc: 'Kilograms, grams, pounds (lbs), ounces, stones, and metric tons',
+    badge: 'Units',
+  },
+  {
+    id: 'area-convert',
+    title: 'Area & Land Converter',
+    category: 'units',
+    shortDesc: 'Square meters, hectares, acres, square feet, and square kilometers',
+    badge: 'Units',
+  },
+  {
+    id: 'volume-convert',
+    title: 'Volume & Capacity Converter',
+    category: 'units',
+    shortDesc: 'Liters, milliliters, US/Imperial gallons, cups, tablespoons, and cubic meters',
+    badge: 'Units',
+  },
+  {
+    id: 'temperature-convert',
+    title: 'Temperature Converter',
+    category: 'units',
+    shortDesc: 'Celsius, Fahrenheit, Kelvin, and Rankine thermal scales',
+    badge: 'Physics',
+  },
+  {
+    id: 'speed-convert',
+    title: 'Speed & Velocity Converter',
+    category: 'units',
+    shortDesc: 'km/h, mph, m/s, knots, ft/s, and Mach speed calculations',
+    badge: 'Physics',
+  },
+  {
+    id: 'time-convert',
+    title: 'Time & Duration Converter',
+    category: 'units',
+    shortDesc: 'Seconds, minutes, hours, days, weeks, months, and years',
+    badge: 'Time',
+  },
+  {
+    id: 'number-system',
+    title: 'Numerical System & Radix',
+    category: 'units',
+    shortDesc: 'Decimal, Binary nibbles, Hexadecimal, Octal, ASCII, and Roman numerals',
+    badge: 'Math',
+  },
+  // Everyday & Philippine Calculators
+  {
+    id: 'income-tax-ph',
+    title: 'Philippine Income Tax & Salary',
+    category: 'calculators',
+    shortDesc: 'TRAIN Law 2023+ revised brackets, SSS, PhilHealth, Pag-IBIG & take-home pay',
+    badge: 'PH Tax',
+  },
+  {
+    id: 'mortgage-calc',
+    title: 'Mortgage & Loan Calculator',
+    category: 'calculators',
+    shortDesc: 'Pag-IBIG & bank housing loans, monthly amortization and payment schedule',
+    badge: 'Finance',
+  },
+  {
+    id: 'electricity-calc',
+    title: 'Electricity & Sub-Meter Splitter',
+    category: 'calculators',
+    shortDesc: 'Apartment/tenant sub-meter bill calculation, effective kWh rate, & appliance costs',
+    badge: 'Utility',
+  },
+  {
+    id: 'bmi-calc',
+    title: 'BMI & Body Health Calculator',
+    category: 'calculators',
+    shortDesc: 'Metric & Imperial Body Mass Index with Asian/WHO thresholds and ideal weight',
+    badge: 'Health',
+  },
+  {
+    id: 'gwa-calc',
+    title: 'Philippine GPA / GWA Calculator',
+    category: 'calculators',
+    shortDesc: 'General Weighted Average (1.00–5.00), units weighting, and Latin Honors standings',
+    badge: 'PH College',
   },
 ];
 
@@ -167,17 +278,23 @@ const CATEGORIES: { id: Category; label: string; count: number }[] = [
   { id: 'media', label: 'Media & Documents', count: 2 },
   { id: 'developer', label: 'Data & Formats', count: 7 },
   { id: 'security', label: 'Encoding & Security', count: 2 },
+  { id: 'units', label: 'Units & Measurements', count: 8 },
+  { id: 'calculators', label: 'Calculators & PH', count: 5 },
 ];
 
 const getToolCategoryColor = (category: Category, isSelected: boolean) => {
   if (isSelected) {
     if (category === 'media') return 'bg-amber-500 text-neutral-950 shadow-sm shadow-amber-500/20';
     if (category === 'security') return 'bg-emerald-500 text-neutral-950 shadow-sm shadow-emerald-500/20';
-    return 'bg-sky-500 text-neutral-950 shadow-sm shadow-sky-500/20';
+    if (category === 'units') return 'bg-sky-500 text-neutral-950 shadow-sm shadow-sky-500/20';
+    if (category === 'calculators') return 'bg-indigo-500 text-neutral-950 shadow-sm shadow-indigo-500/20';
+    return 'bg-blue-500 text-neutral-950 shadow-sm shadow-blue-500/20';
   }
   if (category === 'media') return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20';
   if (category === 'security') return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20';
-  return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 group-hover:bg-sky-500/20';
+  if (category === 'units') return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 group-hover:bg-sky-500/20';
+  if (category === 'calculators') return 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 group-hover:bg-indigo-500/20';
+  return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20';
 };
 
 export function App() {
@@ -1329,6 +1446,19 @@ export function App() {
                         {tool.id === 'csv-json' && <Table className="w-4 h-4" />}
                         {tool.id === 'hash-calc' && <Fingerprint className="w-4 h-4" />}
                         {tool.id === 'unit-convert' && <Ruler className="w-4 h-4" />}
+                        {tool.id === 'length-convert' && <Ruler className="w-4 h-4" />}
+                        {tool.id === 'mass-convert' && <Scale className="w-4 h-4" />}
+                        {tool.id === 'area-convert' && <Maximize2 className="w-4 h-4" />}
+                        {tool.id === 'volume-convert' && <Box className="w-4 h-4" />}
+                        {tool.id === 'temperature-convert' && <Thermometer className="w-4 h-4" />}
+                        {tool.id === 'speed-convert' && <Gauge className="w-4 h-4" />}
+                        {tool.id === 'time-convert' && <Clock className="w-4 h-4" />}
+                        {tool.id === 'number-system' && <Binary className="w-4 h-4" />}
+                        {tool.id === 'income-tax-ph' && <Coins className="w-4 h-4" />}
+                        {tool.id === 'mortgage-calc' && <Home className="w-4 h-4" />}
+                        {tool.id === 'electricity-calc' && <Zap className="w-4 h-4" />}
+                        {tool.id === 'bmi-calc' && <Heart className="w-4 h-4" />}
+                        {tool.id === 'gwa-calc' && <GraduationCap className="w-4 h-4" />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -3113,6 +3243,84 @@ export function App() {
                   </div>
                 )}
 
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+
+            {/* 2.12 Dedicated Unit Converters (Length, Mass, Area, Volume, Temperature, Speed, Time) */}
+            {(activeTool === 'length-convert' ||
+              activeTool === 'mass-convert' ||
+              activeTool === 'area-convert' ||
+              activeTool === 'volume-convert' ||
+              activeTool === 'temperature-convert' ||
+              activeTool === 'speed-convert' ||
+              activeTool === 'time-convert') && (
+              <div className="space-y-6">
+                <UnitConverterTool
+                  initialCategory={
+                    activeTool === 'length-convert'
+                      ? 'length'
+                      : activeTool === 'mass-convert'
+                      ? 'mass'
+                      : activeTool === 'area-convert'
+                      ? 'area'
+                      : activeTool === 'volume-convert'
+                      ? 'volume'
+                      : activeTool === 'temperature-convert'
+                      ? 'temperature'
+                      : activeTool === 'speed-convert'
+                      ? 'speed'
+                      : 'time'
+                  }
+                />
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+
+            {/* 2.13 Numerical System & Radix Converter */}
+            {activeTool === 'number-system' && (
+              <div className="space-y-6">
+                <NumberSystemConverter />
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+
+            {/* 2.14 Philippine Income Tax Calculator (TRAIN Law) */}
+            {activeTool === 'income-tax-ph' && (
+              <div className="space-y-6">
+                <PhilippineTaxCalculator />
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+
+            {/* 2.15 Mortgage & Loan Amortization Calculator */}
+            {activeTool === 'mortgage-calc' && (
+              <div className="space-y-6">
+                <MortgageCalculator />
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+
+            {/* 2.16 Electricity & Sub-meter Splitter */}
+            {activeTool === 'electricity-calc' && (
+              <div className="space-y-6">
+                <ElectricityCalculator />
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+
+            {/* 2.17 BMI & Body Health Calculator */}
+            {activeTool === 'bmi-calc' && (
+              <div className="space-y-6">
+                <BmiCalculator />
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+
+            {/* 2.18 Philippine GPA / GWA College Grade Calculator */}
+            {activeTool === 'gwa-calc' && (
+              <div className="space-y-6">
+                <PhilippineGwaCalculator />
                 <AdSlot placement="post-conversion" />
               </div>
             )}
