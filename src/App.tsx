@@ -48,6 +48,7 @@ import { AdSlot } from './components/AdSlot';
 import { CategoryFilter } from './components/CategoryFilter';
 import { PrivacyModal } from './components/PrivacyModal';
 import { BrandLogo } from './components/BrandLogo';
+import { LoadingScreen } from './components/LoadingScreen';
 import { ImageCompareSlider } from './components/ImageCompareSlider';
 import { DualPaneCodeWorkspace } from './components/DualPaneCodeWorkspace';
 import { CommandPalette } from './components/CommandPalette';
@@ -318,6 +319,17 @@ const getToolCategoryColor = (category: Category, isSelected: boolean) => {
 };
 
 export function App() {
+  // Loading screen state
+  const [isAppLoading, setIsAppLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    // Graceful initial duration ensuring the spinning logo animation is visible and smooth
+    const timer = setTimeout(() => {
+      setIsAppLoading(false);
+    }, 850);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Theme state
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -1311,6 +1323,12 @@ export function App() {
 
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-[#0c0e14] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-300 relative selection:bg-amber-500/30 selection:text-amber-900 dark:selection:bg-amber-400/20 dark:selection:text-amber-200">
+      {/* App Loading Screen with Spinning Philippine Sun & Converter Logo */}
+      <LoadingScreen
+        isVisible={isAppLoading}
+        onFinished={() => setIsAppLoading(false)}
+      />
+
       {/* Skip to Main Content Link for Keyboard and Screen Reader Accessibility */}
       <a
         href="#tool-workspace"
@@ -1330,7 +1348,15 @@ export function App() {
       <header role="banner" className="sticky top-0 z-30 glass-panel border-b border-neutral-200/70 dark:border-white/10 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
-            <BrandLogo size="md" showWordmark={true} />
+            <button
+              type="button"
+              onClick={() => setIsAppLoading(true)}
+              title="Click to replay loading screen animation"
+              className="flex items-center gap-2 cursor-pointer transition hover:opacity-90 active:scale-95 text-left focus:outline-none"
+              aria-label="Isal.in Multi-Converter Logo - Replay Loading Screen"
+            >
+              <BrandLogo size="md" showWordmark={true} />
+            </button>
             <div className="hidden md:flex flex-col pl-3 border-l border-neutral-200 dark:border-neutral-800 leading-tight">
               <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 italic tracking-tight">
                 "Isalin ang lahat. Convert anything."
@@ -3535,7 +3561,15 @@ export function App() {
       <footer role="contentinfo" className="border-t border-neutral-200/60 dark:border-white/10 glass-panel py-8 px-4 text-xs text-neutral-500 dark:text-neutral-400 mt-auto relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
-            <BrandLogo size="sm" showWordmark={true} />
+            <button
+              type="button"
+              onClick={() => setIsAppLoading(true)}
+              title="Click to replay loading screen animation"
+              className="cursor-pointer transition hover:opacity-90 active:scale-95 focus:outline-none"
+              aria-label="Replay loading screen"
+            >
+              <BrandLogo size="sm" showWordmark={true} />
+            </button>
             <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
             <span className="font-medium text-neutral-700 dark:text-neutral-300">
               Isalin ang lahat. Convert anything.

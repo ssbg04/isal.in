@@ -79,10 +79,128 @@
       }
     </script>
     <!-- EthicalAds Privacy-Preserving Ad Network Script -->
-    <script async src="https://media.ethicalads.io/media/client/ethicalads.min.js"></script>
+    <!-- Early Theme Detection to prevent theme flash on load -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('mc_theme');
+          var isDark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      #initial-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #fafafa;
+        font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      }
+      html.dark #initial-loader {
+        background-color: #0c0e14;
+      }
+      @keyframes isal-pre-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes isal-pre-reverse {
+        from { transform: rotate(360deg); }
+        to { transform: rotate(0deg); }
+      }
+      @keyframes isal-pre-sweep {
+        0% { transform: translateX(-100%); }
+        50% { transform: translateX(20%); }
+        100% { transform: translateX(100%); }
+      }
+      .pre-spinner {
+        animation: isal-pre-spin 2.8s linear infinite;
+        transform-origin: center;
+        filter: drop-shadow(0 8px 20px rgba(245,184,0,0.4));
+      }
+      .pre-orbit {
+        animation: isal-pre-reverse 16s linear infinite;
+        transform-origin: center;
+      }
+      .pre-progress-sweep {
+        animation: isal-pre-sweep 1.6s ease-in-out infinite;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="initial-loader" role="status" aria-label="Loading Isal.in Multi-Converter">
+        <div style="position: relative; width: 128px; height: 128px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+          <!-- Orbit Ring -->
+          <svg class="pre-orbit" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.45;" viewBox="0 0 128 128" fill="none">
+            <circle cx="64" cy="64" r="60" stroke="#F5B800" stroke-width="1.5" stroke-dasharray="6 8" stroke-linecap="round" />
+            <circle cx="64" cy="4" r="3" fill="#F5B800" />
+          </svg>
+          <!-- Spinning Philippine Sun Logo -->
+          <svg class="pre-spinner" width="80" height="80" viewBox="256 124 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <clipPath id="pre_disc"><circle r="128" /></clipPath>
+              <linearGradient id="pre_sun" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#FFD83A" />
+                <stop offset="1" stop-color="#F5B800" />
+              </linearGradient>
+            </defs>
+            <g transform="translate(512 380)">
+              <g fill="url(#pre_sun)">
+                <polygon points="-29.1,-147.1 0.0,-232.0 29.1,-147.1" />
+                <polygon points="35.5,-145.7 76.5,-184.8 77.9,-128.2" />
+                <polygon points="83.4,-124.6 164.0,-164.0 124.6,-83.4" />
+                <polygon points="128.2,-77.9 184.8,-76.5 145.7,-35.5" />
+                <polygon points="147.1,-29.1 232.0,0.0 147.1,29.1" />
+                <polygon points="145.7,35.5 184.8,76.5 128.2,77.9" />
+                <polygon points="124.6,83.4 164.0,164.0 83.4,124.6" />
+                <polygon points="77.9,128.2 76.5,184.8 35.5,145.7" />
+                <polygon points="29.1,147.1 0.0,232.0 -29.1,147.1" />
+                <polygon points="-35.5,145.7 -76.5,184.8 -77.9,128.2" />
+                <polygon points="-83.4,124.6 -164.0,164.0 -124.6,83.4" />
+                <polygon points="-128.2,77.9 -184.8,76.5 -145.7,35.5" />
+                <polygon points="-147.1,29.1 -232.0,0.0 -147.1,-29.1" />
+                <polygon points="-145.7,-35.5 -184.8,-76.5 -128.2,-77.9" />
+                <polygon points="-124.6,-83.4 -164.0,-164.0 -83.4,-124.6" />
+                <polygon points="-77.9,-128.2 -76.5,-184.8 -35.5,-145.7" />
+              </g>
+              <circle r="146" fill="#FCD116" />
+              <g clip-path="url(#pre_disc)">
+                <rect x="-130" y="-130" width="260" height="260" fill="#0038A8" />
+                <polygon points="130,-130 130,130 -130,130" fill="#CE1126" />
+              </g>
+              <circle r="128" fill="none" stroke="#fff" stroke-width="5" opacity="0.9" />
+              <g fill="none" stroke="#fff" stroke-width="17" stroke-linecap="round">
+                <path d="M-62.0 -22.6 A66 66 0 0 1 37.9 -54.1" />
+                <path d="M62.0 22.6 A66 66 0 0 1 -37.9 54.1" />
+              </g>
+              <g fill="#fff" stroke="#fff" stroke-width="4" stroke-linejoin="round">
+                <polygon points="24.1,-34.4 62.4,-36.9 51.6,-73.7" />
+                <polygon points="-24.1,34.4 -62.4,36.9 -51.6,73.7" />
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 24px; letter-spacing: -0.025em; margin-bottom: 4px;">
+          <span style="color: #0038A8;">isal</span>
+          <span style="width: 10px; height: 10px; border-radius: 9999px; background-color: #F5B800; display: inline-block;"></span>
+          <span style="color: #CE1126;">in</span>
+        </div>
+        <div style="font-size: 10px; font-family: monospace; letter-spacing: 0.25em; text-transform: uppercase; color: #888; font-weight: 600; margin-bottom: 8px;">MULTI-CONVERTER</div>
+        <div style="font-size: 12px; font-style: italic; font-weight: 500; color: #d97706; margin-bottom: 16px;">"Isalin ang lahat. Convert anything."</div>
+        <div style="width: 192px; height: 4px; border-radius: 9999px; background: rgba(150, 150, 150, 0.2); overflow: hidden; position: relative;">
+          <div class="pre-progress-sweep" style="position: absolute; inset: 0; background: linear-gradient(90deg, transparent, #F5B800, transparent); width: 100%;"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -5,6 +5,7 @@ interface BrandLogoProps {
   showWordmark?: boolean;
   showMotto?: boolean;
   className?: string;
+  isSpinning?: boolean;
 }
 
 export const BrandLogo: React.FC<BrandLogoProps> = ({
@@ -12,6 +13,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
   showWordmark = true,
   showMotto = false,
   className = '',
+  isSpinning = false,
 }) => {
   let iconSize = 36;
   if (typeof size === 'number') {
@@ -33,7 +35,9 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         xmlns="http://www.w3.org/2000/svg"
         role="img"
         aria-label="Isal.in Multi-Converter Logo"
-        className="shrink-0 drop-shadow-xs transition-transform duration-200 hover:scale-105"
+        className={`shrink-0 drop-shadow-xs transition-transform duration-200 hover:scale-105 ${
+          isSpinning ? 'animate-[isal-spin-smooth_2.8s_linear_infinite]' : ''
+        }`}
       >
         <title>Isal.in Multi-Converter</title>
         <defs>
