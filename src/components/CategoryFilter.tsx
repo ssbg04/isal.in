@@ -198,11 +198,11 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
       </div>
 
       {/* Main Filter Container */}
-      <div className="relative group/filter rounded-xl bg-neutral-200/60 dark:bg-neutral-900 border border-neutral-300/40 dark:border-neutral-800/80 p-1">
+      <div className="relative group/filter rounded-2xl glass-panel p-1.5 shadow-xs">
         {/* Left Scroll Chevron & Gradient Fade (Carousel mode only) */}
         {!isWrapped && (
           <div
-            className={`absolute left-0 top-0 bottom-0 z-10 flex items-center pl-0.5 pr-3 rounded-l-xl bg-gradient-to-r from-neutral-200/95 via-neutral-200/80 to-transparent dark:from-neutral-900 dark:via-neutral-900/80 transition-opacity duration-200 ${
+            className={`absolute left-0 top-0 bottom-0 z-10 flex items-center pl-1 pr-3 rounded-l-2xl bg-gradient-to-r from-white/95 via-white/80 to-transparent dark:from-[#10131a]/95 dark:via-[#10131a]/80 transition-opacity duration-200 ${
               canScrollLeft ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
             }`}
           >
@@ -210,14 +210,14 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
               onClick={() => handleScroll('left')}
               type="button"
               aria-label="Scroll categories left"
-              className="w-6 h-6 rounded-lg bg-white/90 dark:bg-neutral-800/90 shadow-xs border border-neutral-300/60 dark:border-neutral-700/60 flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:scale-105 active:scale-95 transition"
+              className="w-6 h-6 rounded-lg bg-white/95 dark:bg-neutral-800/95 shadow-xs border border-neutral-200 dark:border-neutral-700 flex items-center justify-center text-neutral-700 dark:text-neutral-200 hover:scale-105 active:scale-95 transition cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
 
-        {/* Categories List: Either 2-Column Grid/Wrap OR Horizontal Scroll Carousel */}
+        {/* Categories List */}
         <div
           ref={containerRef}
           onScroll={checkScroll}
@@ -240,23 +240,23 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                 key={cat.id}
                 onClick={(e) => handlePillClick(cat.id, e)}
                 type="button"
-                className={`flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg transition-all ${
+                className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 cursor-pointer ${
                   isWrapped ? 'w-full' : 'shrink-0'
                 } ${
                   isSelected
-                    ? 'bg-white dark:bg-neutral-800 text-neutral-950 dark:text-white shadow-xs font-medium border border-neutral-300/40 dark:border-neutral-700/50'
-                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-neutral-800/40'
+                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm font-semibold'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100/70 dark:hover:bg-neutral-800/50'
                 }`}
               >
                 <div className="flex items-center gap-1.5 truncate">
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-neutral-950 dark:text-white' : 'text-neutral-400 dark:text-neutral-500'}`} />
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-amber-400 dark:text-amber-500' : 'text-neutral-400 dark:text-neutral-500'}`} />
                   <span className="truncate">{cat.label}</span>
                 </div>
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono transition-colors shrink-0 ${
                     isSelected
-                      ? 'bg-neutral-100 dark:bg-neutral-700/90 text-neutral-900 dark:text-neutral-100 font-semibold'
-                      : 'bg-neutral-300/50 dark:bg-neutral-800/80 text-neutral-500 dark:text-neutral-400'
+                      ? 'bg-neutral-800 text-neutral-200 dark:bg-neutral-100 dark:text-neutral-900 font-bold'
+                      : 'bg-neutral-200/60 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
                   }`}
                 >
                   {cat.count}

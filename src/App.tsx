@@ -35,6 +35,7 @@ import { AdSlot } from './components/AdSlot';
 import { CategoryFilter } from './components/CategoryFilter';
 import { PrivacyModal } from './components/PrivacyModal';
 import { BrandLogo } from './components/BrandLogo';
+import { ImageCompareSlider } from './components/ImageCompareSlider';
 import type {
   ToolType,
   ConversionResult,
@@ -161,6 +162,17 @@ const CATEGORIES: { id: Category; label: string; count: number }[] = [
   { id: 'security', label: 'Encoding & Security', count: 2 },
 ];
 
+const getToolCategoryColor = (category: Category, isSelected: boolean) => {
+  if (isSelected) {
+    if (category === 'media') return 'bg-amber-500 text-neutral-950 shadow-sm shadow-amber-500/20';
+    if (category === 'security') return 'bg-emerald-500 text-neutral-950 shadow-sm shadow-emerald-500/20';
+    return 'bg-sky-500 text-neutral-950 shadow-sm shadow-sky-500/20';
+  }
+  if (category === 'media') return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20';
+  if (category === 'security') return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20';
+  return 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 group-hover:bg-sky-500/20';
+};
+
 export function App() {
   // Theme state
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -186,6 +198,7 @@ export function App() {
 
   // File state
   const [files, setFiles] = useState<File[]>([]);
+  const [originalPreviewUrl, setOriginalPreviewUrl] = useState<string | null>(null);
   const [targetImageFormat, setTargetImageFormat] = useState<'image/webp' | 'image/png' | 'image/jpeg'>('image/webp');
   const [imageQuality, setImageQuality] = useState<number>(0.85);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -344,6 +357,10 @@ export function App() {
     setResult(null);
     setBatchResults([]);
     setErrorMsg(null);
+    setOriginalPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
     if (toolId === 'markdown-html') {
       const sample = `# Multi-Converter Markdown\n\nFast, **100% private** in-browser text transformation.\n\n- Zero server uploads\n- Instant live preview\n- Clean HTML export\n\n> "Security and privacy without compromise."\n\n\`\`\`javascript\nconsole.log("Hello from browser sandbox!");\n\`\`\``;
       setTextInput(sample);
@@ -406,6 +423,54 @@ export function App() {
     }
 
     setFiles(incoming);
+    setOriginalPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      if (incoming.length > 0 && incoming[0].type.startsWith('image/')) {
+        return URL.createObjectURL(incoming[0]);
+      }
+      return null;
+    });
+  };
+
+  const handleLoadSampleImage = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 800;
+    canvas.height = 500;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const grad = ctx.createLinearGradient(0, 0, 800, 500);
+      grad.addColorStop(0, '#0c0e14');
+      grad.addColorStop(0.5, '#1e1b4b');
+      grad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 800, 500);
+
+      ctx.fillStyle = 'rgba(245, 158, 11, 0.15)';
+      ctx.beginPath();
+      ctx.arc(400, 250, 160, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(400, 200, 60, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 36px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Isal.in Multi-Converter', 400, 320);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '500 18px sans-serif';
+      ctx.fillText('Visual Inspection Sample (PNG)', 400, 360);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], 'isalin_sample_banner.png', { type: 'image/png' });
+          validateAndSetFiles([file]);
+        }
+      }, 'image/png');
+    }
   };
 
   const handleConvert = useCallback(async () => {
@@ -674,15 +739,25 @@ export function App() {
   });
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-200">
-      {/* Minimalist Top App Bar */}
-      <header className="border-b border-neutral-200/80 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-900/60 backdrop-blur-md sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0c0e14] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-300 relative selection:bg-amber-500/30 selection:text-amber-900 dark:selection:bg-amber-400/20 dark:selection:text-amber-200">
+      {/* Background Ambient Mesh Lighting & Grid Accents */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[380px] bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent blur-3xl rounded-full dark:from-amber-500/15 dark:via-amber-400/5" />
+        <div className="absolute top-1/4 -right-32 w-[500px] h-[500px] bg-blue-600/5 dark:bg-blue-600/10 blur-3xl rounded-full" />
+        <div className="absolute bottom-10 -left-32 w-[450px] h-[450px] bg-emerald-600/5 dark:bg-emerald-600/10 blur-3xl rounded-full" />
+      </div>
+
+      {/* Sleek Glassmorphic Top App Bar */}
+      <header className="sticky top-0 z-30 glass-panel border-b border-neutral-200/70 dark:border-white/10 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between relative z-10">
           <div className="flex items-center gap-3">
             <BrandLogo size="md" showWordmark={true} />
-            <span className="hidden md:inline-block text-xs text-neutral-400 dark:text-neutral-500 font-mono border-l border-neutral-200 dark:border-neutral-800 pl-3 py-0.5">
-              client-local
-            </span>
+            <div className="hidden md:flex items-center gap-2 pl-3 border-l border-neutral-200 dark:border-neutral-800">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-medium bg-neutral-100/90 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 border border-neutral-200/80 dark:border-white/10">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                client-local
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2.5 sm:gap-3">
@@ -690,7 +765,7 @@ export function App() {
             {installPrompt && (
               <button
                 onClick={handleInstallApp}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 transition shadow-sm shadow-amber-500/20 active:scale-95 cursor-pointer"
                 title="Install Multi-Converter on your device"
               >
                 <DownloadCloud className="w-3.5 h-3.5" />
@@ -699,18 +774,22 @@ export function App() {
               </button>
             )}
 
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-700/80">
-              <Shield className="w-3 h-3 text-neutral-500 dark:text-neutral-400" />
-              <span>Zero-Upload Guarantee</span>
+            {/* Zero-Upload Status Indicator */}
+            <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 shadow-xs">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>100% Private Sandbox</span>
             </div>
 
             {/* Theme Toggle Button */}
             <button
               onClick={() => setIsDark(!isDark)}
               aria-label="Toggle Theme"
-              className="w-9 h-9 rounded-lg border border-neutral-200 dark:border-neutral-800 flex items-center justify-center text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition"
+              className="w-9 h-9 rounded-xl border border-neutral-200/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:scale-105 active:scale-95 transition cursor-pointer"
             >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-neutral-700" />}
             </button>
           </div>
         </div>
@@ -721,7 +800,7 @@ export function App() {
         <aside
           role="status"
           aria-live="polite"
-          className="bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 text-center text-xs text-amber-800 dark:text-amber-300 flex items-center justify-center gap-2"
+          className="relative z-20 bg-amber-500/15 border-b border-amber-500/30 px-4 py-2.5 text-center text-xs text-amber-800 dark:text-amber-300 flex items-center justify-center gap-2 backdrop-blur-md"
         >
           <WifiOff className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <span>
@@ -731,12 +810,12 @@ export function App() {
       )}
 
       {/* 3.1 Header Advertisement (Subtle & Non-Intrusive) */}
-      <section className="px-4 pt-4 sm:pt-6">
+      <section className="px-4 pt-4 sm:pt-6 relative z-10">
         <AdSlot placement="header" />
       </section>
 
       {/* Main Workspace Layout */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
         
         {/* Left Column: Categorized Tool Drawer & Catalog (lg:col-span-4) */}
         <div className="lg:col-span-4 space-y-4">
@@ -749,31 +828,37 @@ export function App() {
           />
 
           {/* Quick Search Tool Input */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <div className="relative group">
+            <Search className="w-3.5 h-3.5 text-neutral-400 group-focus-within:text-amber-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
             <input
               id="tool-search-input"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter tools... (Press '/' to search)"
-              className="w-full bg-white/70 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800 rounded-xl pl-8 pr-7 py-2 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 outline-none focus:border-neutral-900 dark:focus:border-neutral-400 transition"
+              placeholder="Search utilities... (Press '/' to focus)"
+              className="w-full glass-panel border border-neutral-200/80 dark:border-white/10 rounded-2xl pl-9 pr-12 py-2.5 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500/60 dark:focus:border-amber-400/50 transition shadow-xs"
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+              {searchQuery ? (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                  className="p-0.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-700/80 bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 font-mono">
+                  /
+                </kbd>
+              )}
+            </div>
           </div>
 
           {/* Categorized Tool Cards List */}
           <div className="space-y-2">
             {filteredTools.length === 0 ? (
-              <div className="p-6 text-center rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/40 dark:bg-neutral-900/40 text-xs text-neutral-400">
+              <div className="p-6 text-center rounded-2xl border border-neutral-200/80 dark:border-neutral-800 glass-panel text-xs text-neutral-400">
                 No matching tools found for "{searchQuery}".
               </div>
             ) : (
@@ -783,19 +868,21 @@ export function App() {
                   <button
                     key={tool.id}
                     onClick={() => handleToolSelect(tool.id)}
-                    className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between group ${
+                    className={`w-full text-left p-3 rounded-2xl border transition-all duration-200 flex items-center justify-between group cursor-pointer relative overflow-hidden ${
                       isSelected
-                        ? 'border-neutral-900 dark:border-neutral-100 bg-white dark:bg-neutral-900 shadow-xs'
-                        : 'border-neutral-200/80 dark:border-neutral-850 bg-white/60 dark:bg-neutral-900/30 hover:border-neutral-300 dark:hover:border-neutral-700'
+                        ? 'glass-card border-amber-500/50 dark:border-amber-400/50 shadow-md shadow-amber-500/5 ring-1 ring-amber-500/20'
+                        : 'glass-panel border-neutral-200/70 dark:border-white/5 hover:border-neutral-300 dark:hover:border-white/20 hover:translate-x-0.5'
                     }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    {isSelected && (
+                      <div className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-gradient-to-b from-amber-400 to-amber-600 rounded-r-full shadow-xs" />
+                    )}
+                    <div className="flex items-center gap-3 min-w-0 flex-1 pl-1">
                       <div
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${getToolCategoryColor(
+                          tool.category,
                           isSelected
-                            ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
-                            : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 group-hover:bg-neutral-200/70 dark:group-hover:bg-neutral-700'
-                        }`}
+                        )}`}
                       >
                         {tool.id === 'image-convert' && <FileImage className="w-4 h-4" />}
                         {tool.id === 'images-to-pdf' && <FileText className="w-4 h-4" />}
@@ -809,9 +896,9 @@ export function App() {
                         {tool.id === 'hash-calc' && <Fingerprint className="w-4 h-4" />}
                         {tool.id === 'unit-convert' && <Ruler className="w-4 h-4" />}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-xs sm:text-sm truncate text-neutral-900 dark:text-neutral-100">
+                          <span className="font-semibold text-xs sm:text-sm truncate text-neutral-950 dark:text-white">
                             {tool.title}
                           </span>
                         </div>
@@ -820,13 +907,18 @@ export function App() {
                         </p>
                       </div>
                     </div>
-                    <ChevronRight
-                      className={`w-4 h-4 shrink-0 transition-transform ${
-                        isSelected
-                          ? 'text-neutral-900 dark:text-white translate-x-0.5'
-                          : 'text-neutral-400 opacity-40 group-hover:opacity-100'
-                      }`}
-                    />
+                    <div className="flex items-center gap-1.5 shrink-0 pl-1">
+                      <span className="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-neutral-100/80 dark:bg-neutral-800/80 text-neutral-500 dark:text-neutral-400 border border-neutral-200/60 dark:border-white/5">
+                        {tool.badge}
+                      </span>
+                      <ChevronRight
+                        className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                          isSelected
+                            ? 'text-amber-500 dark:text-amber-400 translate-x-0.5'
+                            : 'text-neutral-400 opacity-30 group-hover:opacity-100 group-hover:translate-x-0.5'
+                        }`}
+                      />
+                    </div>
                   </button>
                 );
               })
@@ -842,37 +934,41 @@ export function App() {
         {/* Right Column: Active Utility Workspace (lg:col-span-8) */}
         <div className="lg:col-span-8 space-y-6">
           
-          {/* Active Tool Header Badge */}
-          <div className="bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100 dark:border-neutral-800">
+          {/* Active Utility Workspace Card */}
+          <div className="glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-neutral-200/80 dark:border-white/10 relative overflow-hidden">
+            {/* Top Specular Glow Edge */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/40 dark:via-amber-400/30 to-transparent pointer-events-none" />
+
+            {/* Active Tool Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-200/60 dark:border-white/10">
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200/60 dark:border-neutral-700/60">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-[10px] uppercase font-mono font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
                     {currentToolMeta.badge}
                   </span>
-                  <h2 className="text-base sm:text-lg font-semibold text-neutral-950 dark:text-neutral-50">
+                  <h2 className="text-lg sm:text-xl font-bold tracking-tight text-neutral-950 dark:text-white">
                     {currentToolMeta.title}
                   </h2>
                 </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1.5 leading-relaxed">
                   {currentToolMeta.shortDesc}
                 </p>
               </div>
 
-              <div className="flex items-center gap-1.5 self-start sm:self-auto">
+              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
                 <button
                   onClick={handleShareTool}
-                  title="Copy link to this specific tool"
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white rounded-md transition hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  title="Copy direct URL to this specific tool"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white rounded-xl transition glass-panel hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
                 >
                   {linkCopied ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-500" />
-                      <span className="text-emerald-600 dark:text-emerald-400 font-medium">Link Copied!</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Link Copied!</span>
                     </>
                   ) : (
                     <>
-                      <Share2 className="w-3.5 h-3.5" />
+                      <Share2 className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                       <span>Share</span>
                     </>
                   )}
@@ -880,9 +976,10 @@ export function App() {
 
                 <button
                   onClick={() => handleToolSelect(activeTool)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white rounded-md transition hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  title="Reset workspace state"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white rounded-xl transition glass-panel hover:scale-105 active:scale-95 cursor-pointer shadow-2xs"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" />
+                  <RotateCcw className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
                   <span>Reset</span>
                 </button>
               </div>
@@ -904,18 +1001,33 @@ export function App() {
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={handleFileDrop}
                   onClick={() => document.getElementById('file-upload-input')?.click()}
-                  className="group border border-dashed border-neutral-300 dark:border-neutral-750 hover:border-neutral-900 dark:hover:border-neutral-400 bg-neutral-50/50 dark:bg-neutral-950/40 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all"
+                  className="group relative border-2 border-dashed border-neutral-300/80 dark:border-neutral-700/80 hover:border-amber-500/70 dark:hover:border-amber-400/60 bg-gradient-to-b from-white/70 to-neutral-50/50 dark:from-neutral-900/40 dark:to-[#0c0e14]/60 rounded-2xl p-8 sm:p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 hover:shadow-lg hover:shadow-amber-500/5 overflow-hidden"
                 >
-                  <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                    <UploadCloud className="w-6 h-6 stroke-[1.8]" />
+                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3.5 group-hover:scale-110 transition-transform duration-200 shadow-sm">
+                    <UploadCloud className="w-7 h-7 stroke-[1.8]" />
                   </div>
-                  <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
+                  <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
                     Drop your {activeTool === 'image-convert' ? 'image' : 'images'} here, or{' '}
-                    <span className="underline underline-offset-4 decoration-neutral-400">browse files</span>
+                    <span className="text-amber-600 dark:text-amber-400 underline underline-offset-4 decoration-amber-500/50 hover:decoration-amber-500">browse files</span>
                   </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1.5">
                     Free Limit: Up to {APP_LIMITS.free.maxSingleFileMB}MB per file • Processed 100% locally
                   </p>
+                  {activeTool === 'image-convert' && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <button
+                        type="button"
+                        id="load-sample-image-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLoadSampleImage();
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/25 transition active:scale-95 cursor-pointer"
+                      >
+                        <span>⚡ Try Sample Image</span>
+                      </button>
+                    </div>
+                  )}
                   <input
                     id="file-upload-input"
                     type="file"
@@ -1004,7 +1116,7 @@ export function App() {
                 <button
                   disabled={!files.length || isProcessing}
                   onClick={handleConvert}
-                  className="w-full py-3 bg-neutral-950 text-white dark:bg-neutral-50 dark:text-neutral-950 disabled:opacity-40 disabled:cursor-not-allowed font-medium text-sm rounded-xl transition hover:opacity-90 flex items-center justify-center gap-2 shadow-xs"
+                  className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none font-bold text-sm rounded-xl transition shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>
                     {isProcessing
@@ -1013,7 +1125,7 @@ export function App() {
                       ? `Convert ${files.length > 1 ? `${files.length} Images` : 'Image'}`
                       : 'Merge into PDF'}
                   </span>
-                  <kbd className="hidden sm:inline-block text-[10px] opacity-60 font-mono px-1.5 py-0.5 rounded bg-white/20 dark:bg-black/20">
+                  <kbd className="hidden sm:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/15 text-neutral-900">
                     Ctrl+↵
                   </kbd>
                 </button>
@@ -1060,104 +1172,165 @@ export function App() {
 
                     {/* Itemized Converted Files List */}
                     <div className="space-y-2 pt-1 max-h-60 overflow-y-auto pr-1">
-                      {batchResults.map((item, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200/60 dark:border-neutral-800/60 bg-white/70 dark:bg-neutral-900/70 text-xs"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            {item.downloadUrl && (
-                              <img
-                                src={item.downloadUrl}
-                                alt="thumb"
-                                className="w-8 h-8 rounded object-cover border border-neutral-200 dark:border-neutral-800 shrink-0"
-                              />
-                            )}
-                            <div className="min-w-0 truncate">
-                              <p className="font-mono truncate text-neutral-800 dark:text-neutral-200 font-medium">
-                                {item.filename}
-                              </p>
-                              {item.sizeBytes && (
-                                <p className="text-[10px] text-neutral-400 font-mono">
-                                  {(item.sizeBytes / 1024).toFixed(1)} KB
-                                  {item.originalSizeBytes && item.sizeBytes < item.originalSizeBytes && (
-                                    <span className="text-emerald-500 ml-1.5 font-semibold">
-                                      (-{Math.round(((item.originalSizeBytes - item.sizeBytes) / item.originalSizeBytes) * 100)}%)
-                                    </span>
-                                  )}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          <a
-                            href={item.downloadUrl}
-                            download={item.filename}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-medium transition shrink-0 ml-2"
+                      {batchResults.map((item, idx) => {
+                        const isSelectedItem = result?.filename === item.filename;
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              setResult(item);
+                              const matched = files.find((f) =>
+                                item.filename.toLowerCase().includes(f.name.replace(/\.[^/.]+$/, '').toLowerCase())
+                              );
+                              if (matched) {
+                                setOriginalPreviewUrl((prev) => {
+                                  if (prev) URL.revokeObjectURL(prev);
+                                  return URL.createObjectURL(matched);
+                                });
+                              }
+                            }}
+                            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition ${
+                              isSelectedItem
+                                ? 'border-amber-500/50 bg-amber-500/10 dark:bg-amber-500/15 ring-1 ring-amber-500/20'
+                                : 'border-neutral-200/60 dark:border-neutral-800/60 bg-white/70 dark:bg-neutral-900/70 hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60'
+                            }`}
                           >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Download</span>
-                          </a>
-                        </div>
-                      ))}
+                            <div className="flex items-center gap-3 min-w-0">
+                              {item.downloadUrl && (
+                                <img
+                                  src={item.downloadUrl}
+                                  alt="thumb"
+                                  className="w-8 h-8 rounded-lg object-cover border border-neutral-200 dark:border-neutral-800 shrink-0"
+                                />
+                              )}
+                              <div className="min-w-0 truncate">
+                                <p className="font-mono truncate text-neutral-800 dark:text-neutral-200 font-medium">
+                                  {item.filename}
+                                </p>
+                                {item.sizeBytes && (
+                                  <p className="text-[10px] text-neutral-400 font-mono">
+                                    {(item.sizeBytes / 1024).toFixed(1)} KB
+                                    {item.originalSizeBytes && item.sizeBytes < item.originalSizeBytes && (
+                                      <span className="text-emerald-500 ml-1.5 font-semibold">
+                                        (-{Math.round(((item.originalSizeBytes - item.sizeBytes) / item.originalSizeBytes) * 100)}%)
+                                      </span>
+                                    )}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <a
+                              href={item.downloadUrl}
+                              download={item.filename}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-medium transition shrink-0 ml-2 cursor-pointer"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Download</span>
+                            </a>
+                          </div>
+                        );
+                      })}
                     </div>
 
                     <AdSlot placement="post-conversion" />
                   </div>
                 )}
 
-                {/* Single Result Section (for Single Image or PDF) */}
-                {result && (batchResults.length <= 1 || activeTool === 'images-to-pdf') && (
-                  <div className="mt-4 p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-950/60 space-y-4">
+                {/* Interactive Image Comparison Slider (for Single or Selected Batch Image) */}
+                {activeTool === 'image-convert' && result?.downloadUrl && originalPreviewUrl && (
+                  <div className="mt-5 space-y-4">
+                    <div className="flex items-center justify-between pb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                        <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
+                          Interactive Visual Quality Comparison
+                        </h3>
+                      </div>
+                      <span className="text-[11px] font-mono text-neutral-400 hidden sm:inline">
+                        Drag divider or use keyboard ← →
+                      </span>
+                    </div>
+
+                    <ImageCompareSlider
+                      originalUrl={originalPreviewUrl}
+                      convertedUrl={result.downloadUrl}
+                      originalName={files[0]?.name || 'Original Image'}
+                      convertedName={result.filename}
+                      originalSizeBytes={files[0]?.size}
+                      convertedSizeBytes={result.sizeBytes}
+                      originalFormat={files[0]?.type.split('/')[1]?.toUpperCase()}
+                      convertedFormat={targetImageFormat.split('/')[1]?.toUpperCase()}
+                      onDownload={() => {
+                        if (result.downloadUrl) {
+                          const a = document.createElement('a');
+                          a.href = result.downloadUrl;
+                          a.download = result.filename;
+                          a.click();
+                        }
+                      }}
+                    />
+
+                    {/* Single Image Direct Action Bar */}
+                    {batchResults.length <= 1 && (
+                      <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                        <a
+                          href={result.downloadUrl}
+                          download={result.filename}
+                          className="flex-1 w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-bold text-sm rounded-xl flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 hover:shadow-lg transition cursor-pointer"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>Download {result.filename}</span>
+                        </a>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (result.downloadUrl) {
+                              navigator.clipboard.writeText(result.filename);
+                            }
+                          }}
+                          className="w-full sm:w-auto py-3.5 px-4 glass-panel border border-neutral-200/80 dark:border-white/10 rounded-xl text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copy Filename</span>
+                        </button>
+                      </div>
+                    )}
+
+                    <AdSlot placement="post-conversion" />
+                  </div>
+                )}
+
+                {/* PDF Compilation Result */}
+                {activeTool === 'images-to-pdf' && result?.downloadUrl && (
+                  <div className="mt-5 p-5 rounded-2xl glass-card border border-neutral-200 dark:border-neutral-800 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="font-mono truncate text-neutral-900 dark:text-neutral-200 max-w-[200px] sm:max-w-xs">
+                        <span className="font-mono truncate text-neutral-900 dark:text-neutral-200 max-w-[200px] sm:max-w-xs font-bold">
                           {result.filename}
                         </span>
                         {result.sizeBytes && (
-                          <span className="font-mono text-neutral-500 shrink-0">
+                          <span className="font-mono text-neutral-400">
                             {(result.sizeBytes / (1024 * 1024)).toFixed(2)} MB
                           </span>
                         )}
                       </div>
-
-                      {/* Compression Savings Badge */}
-                      {files.length > 0 && result.sizeBytes && (() => {
-                        const originalBytes = files.reduce((acc, f) => acc + f.size, 0);
-                        const diff = originalBytes - result.sizeBytes;
-                        const pct = Math.round((diff / originalBytes) * 100);
-                        if (pct > 0) {
-                          return (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shrink-0">
-                              Saved {pct}% ({(diff / (1024 * 1024)).toFixed(2)} MB less)
-                            </span>
-                          );
-                        }
-                        return null;
-                      })()}
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        {files.length} Pages Compiled
+                      </span>
                     </div>
-
-                    {/* Image Preview Thumbnail */}
-                    {activeTool === 'image-convert' && result.downloadUrl && (
-                      <div className="relative rounded-lg overflow-hidden border border-neutral-200/80 dark:border-neutral-800 bg-neutral-100/50 dark:bg-neutral-900/50 flex items-center justify-center p-2 max-h-44">
-                        <img
-                          src={result.downloadUrl}
-                          alt="Converted file preview"
-                          className="max-h-40 w-auto object-contain rounded"
-                        />
-                      </div>
-                    )}
 
                     <a
                       href={result.downloadUrl}
                       download={result.filename}
-                      className="w-full py-2.5 px-4 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-950 font-medium text-xs sm:text-sm rounded-lg flex items-center justify-center gap-2 hover:opacity-90 transition shadow-xs"
+                      className="w-full py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 hover:opacity-90 transition shadow-md shadow-amber-500/20 cursor-pointer"
                     >
                       <Download className="w-4 h-4" />
-                      <span>Download File</span>
+                      <span>Download PDF Document</span>
                     </a>
 
-                    {/* 3.4 Non-Intrusive Post-Conversion Sponsor */}
                     <AdSlot placement="post-conversion" />
                   </div>
                 )}
@@ -1170,23 +1343,23 @@ export function App() {
                 {/* Mode Selectors */}
                 <div className="flex flex-wrap items-center gap-3">
                   {activeTool === 'json-yaml' && (
-                    <div className="inline-flex rounded-lg border border-neutral-200 dark:border-neutral-800 p-0.5 text-xs bg-neutral-100/50 dark:bg-neutral-950">
+                    <div className="inline-flex rounded-xl glass-panel p-1 text-xs shadow-2xs">
                       <button
                         onClick={() => setJsonDirection('json-to-yaml')}
-                        className={`px-3 py-1.5 rounded-md font-medium transition ${
+                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
                           jsonDirection === 'json-to-yaml'
-                            ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs'
-                            : 'text-neutral-500'
+                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                         }`}
                       >
                         JSON → YAML
                       </button>
                       <button
                         onClick={() => setJsonDirection('yaml-to-json')}
-                        className={`px-3 py-1.5 rounded-md font-medium transition ${
+                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
                           jsonDirection === 'yaml-to-json'
-                            ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs'
-                            : 'text-neutral-500'
+                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                         }`}
                       >
                         YAML → JSON
@@ -1195,23 +1368,23 @@ export function App() {
                   )}
 
                   {activeTool === 'base64' && (
-                    <div className="inline-flex rounded-lg border border-neutral-200 dark:border-neutral-800 p-0.5 text-xs bg-neutral-100/50 dark:bg-neutral-950">
+                    <div className="inline-flex rounded-xl glass-panel p-1 text-xs shadow-2xs">
                       <button
                         onClick={() => setBase64Mode('encode')}
-                        className={`px-3 py-1.5 rounded-md font-medium transition ${
+                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
                           base64Mode === 'encode'
-                            ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs'
-                            : 'text-neutral-500'
+                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                         }`}
                       >
                         Encode
                       </button>
                       <button
                         onClick={() => setBase64Mode('decode')}
-                        className={`px-3 py-1.5 rounded-md font-medium transition ${
+                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
                           base64Mode === 'decode'
-                            ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs'
-                            : 'text-neutral-500'
+                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                         }`}
                       >
                         Decode
@@ -1220,23 +1393,23 @@ export function App() {
                   )}
 
                   {activeTool === 'url-encode' && (
-                    <div className="inline-flex rounded-lg border border-neutral-200 dark:border-neutral-800 p-0.5 text-xs bg-neutral-100/50 dark:bg-neutral-950">
+                    <div className="inline-flex rounded-xl glass-panel p-1 text-xs shadow-2xs">
                       <button
                         onClick={() => setUrlMode('encode')}
-                        className={`px-3 py-1.5 rounded-md font-medium transition ${
+                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
                           urlMode === 'encode'
-                            ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs'
-                            : 'text-neutral-500'
+                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                         }`}
                       >
                         Encode
                       </button>
                       <button
                         onClick={() => setUrlMode('decode')}
-                        className={`px-3 py-1.5 rounded-md font-medium transition ${
+                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
                           urlMode === 'decode'
-                            ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs'
-                            : 'text-neutral-500'
+                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                         }`}
                       >
                         Decode
@@ -1269,17 +1442,17 @@ export function App() {
                       value={textInput}
                       onChange={(e) => setTextInput(e.target.value)}
                       placeholder="Paste text, JSON, or code string here..."
-                      className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-3.5 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 outline-none focus:border-neutral-900 dark:focus:border-neutral-100 transition resize-y"
+                      className="w-full bg-white/70 dark:bg-[#0c0e14]/70 border border-neutral-200/80 dark:border-white/10 rounded-2xl p-4 font-mono text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500/60 dark:focus:border-amber-400/50 transition resize-y shadow-inner"
                     />
                   </div>
                 )}
 
                 <button
                   onClick={handleConvert}
-                  className="w-full py-2.5 bg-neutral-950 text-white dark:bg-neutral-50 dark:text-neutral-950 font-medium text-xs sm:text-sm rounded-xl transition hover:opacity-90 flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-bold text-xs sm:text-sm rounded-xl transition shadow-md shadow-amber-500/20 hover:shadow-lg hover:shadow-amber-500/30 active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>{activeTool === 'uuid' ? 'Generate UUIDs' : 'Transform Input'}</span>
-                  <kbd className="hidden sm:inline-block text-[10px] opacity-60 font-mono px-1.5 py-0.5 rounded bg-white/20 dark:bg-black/20">
+                  <kbd className="hidden sm:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/15 text-neutral-900">
                     Ctrl+↵
                   </kbd>
                 </button>
@@ -1570,7 +1743,7 @@ export function App() {
                 <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-neutral-100/60 dark:bg-neutral-850/60 border border-neutral-200/80 dark:border-neutral-800">
                   <div className="flex flex-wrap items-center gap-3">
                     {/* Direction switcher */}
-                    <div className="inline-flex rounded-lg border border-neutral-200 dark:border-neutral-700 p-0.5 text-xs bg-white/60 dark:bg-neutral-900/60">
+                    <div className="inline-flex rounded-xl glass-panel p-1 text-xs shadow-2xs">
                       <button
                         onClick={() => {
                           setCsvMode('csv-to-json');
@@ -1580,10 +1753,10 @@ export function App() {
                             setTextOutput(JSON.stringify(parsed.rows, null, csvIndentation));
                           }
                         }}
-                        className={`px-3 py-1 rounded-md font-medium transition ${
+                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
                           csvMode === 'csv-to-json'
-                            ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 shadow-xs'
-                            : 'text-neutral-500'
+                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                         }`}
                       >
                         CSV ➔ JSON
@@ -1600,10 +1773,10 @@ export function App() {
                             }
                           }
                         }}
-                        className={`px-3 py-1 rounded-md font-medium transition ${
+                        className={`px-3.5 py-1.5 rounded-lg font-semibold transition-all duration-150 cursor-pointer ${
                           csvMode === 'json-to-csv'
-                            ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 shadow-xs'
-                            : 'text-neutral-500'
+                            ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
+                            : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                         }`}
                       >
                         JSON ➔ CSV
@@ -2617,40 +2790,51 @@ export function App() {
           <AdSlot placement="between-content" />
 
           {/* Privacy & Educational Note */}
-          <div className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 bg-white/40 dark:bg-neutral-900/40 p-5 sm:p-6 text-xs text-neutral-500 dark:text-neutral-400 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">
-                Architecture & Security
-              </h3>
+          <div className="rounded-3xl glass-panel p-6 sm:p-7 text-xs text-neutral-500 dark:text-neutral-400 space-y-3 relative overflow-hidden border border-emerald-500/20 dark:border-emerald-500/20 shadow-lg shadow-emerald-500/5">
+            <div className="absolute -top-12 -right-12 w-36 h-36 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 relative z-10">
+              <div className="flex items-center gap-2.5">
+                <span className="w-7 h-7 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-2xs">
+                  <ShieldCheck className="w-4 h-4" />
+                </span>
+                <h3 className="font-bold text-neutral-950 dark:text-neutral-100 text-sm tracking-tight">
+                  Client-Side Architecture & Security
+                </h3>
+              </div>
               <button
                 onClick={() => setIsPrivacyOpen(true)}
-                className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium inline-flex items-center gap-1"
+                className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 font-semibold inline-flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
               >
                 <Shield className="w-3.5 h-3.5" />
-                Read Full Privacy Policy
+                <span>Read Full Privacy Policy</span>
               </button>
             </div>
-            <p className="leading-relaxed">
-              Every operation runs locally inside your browser sandbox via JavaScript and Web APIs. Neither your images,
-              documents, nor secret text strings are uploaded to any server. This guarantees zero latency and 100% data privacy.
+            <p className="leading-relaxed relative z-10">
+              Every operation runs locally inside your browser sandbox via JavaScript, WebAssembly, and Canvas Web APIs. Neither your images, documents, nor secret text strings are uploaded to any server. This guarantees zero network latency and 100% data sovereignty.
             </p>
           </div>
         </div>
       </main>
 
-      {/* Minimal Footer */}
-      <footer className="border-t border-neutral-200/60 dark:border-neutral-800/60 py-6 px-4 text-center text-xs text-neutral-400 dark:text-neutral-500">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+      {/* Minimalist Glass Footer */}
+      <footer className="border-t border-neutral-200/60 dark:border-white/10 glass-panel py-6 px-4 text-center text-xs text-neutral-400 dark:text-neutral-500 mt-auto relative z-10">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
             <BrandLogo size="sm" showWordmark={true} />
             <span className="hidden sm:inline text-neutral-300 dark:text-neutral-700">•</span>
-            <span className="hidden sm:inline">Client-Side Utility Platform</span>
+            <span className="hidden sm:inline font-mono text-[11px] text-neutral-400 dark:text-neutral-500">
+              Zero-Upload Developer Suite
+            </span>
           </div>
           <div className="flex items-center gap-4">
-            <span>Ethical Ads • No Tracking</span>
+            <span className="inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Ethical Ads • No Tracking
+            </span>
+            <span className="text-neutral-300 dark:text-neutral-700">•</span>
             <button
               onClick={() => setIsPrivacyOpen(true)}
-              className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white underline font-medium transition cursor-pointer"
+              className="text-neutral-700 dark:text-neutral-300 hover:text-amber-500 dark:hover:text-amber-400 font-medium transition cursor-pointer"
             >
               Privacy Policy
             </button>
