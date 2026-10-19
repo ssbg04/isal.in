@@ -28,11 +28,23 @@ import {
   Table,
   Fingerprint,
   ShieldCheck,
+  Ruler,
+  HardDrive,
+  Clock,
 } from 'lucide-react';
 import { AdSlot } from './components/AdSlot';
 import { CategoryFilter } from './components/CategoryFilter';
 import { PrivacyModal } from './components/PrivacyModal';
-import type { ToolType, ConversionResult, ColorFormats, CsvParseResult, HashResult } from './services/conversionService';
+import type {
+  ToolType,
+  ConversionResult,
+  ColorFormats,
+  CsvParseResult,
+  HashResult,
+  CssUnitResults,
+  DataUnitBreakdown,
+  TimestampResults,
+} from './services/conversionService';
 import {
   convertImage,
   convertImagesToPdf,
@@ -47,6 +59,9 @@ import {
   parseCsv,
   jsonToCsv,
   computeAllHashes,
+  convertCssUnits,
+  convertDataStorage,
+  parseTimestampOrDate,
 } from './services/conversionService';
 import { APP_LIMITS } from './config/limits';
 
@@ -131,11 +146,18 @@ const TOOLS: ToolMeta[] = [
     shortDesc: 'Compute SHA-256, SHA-512, MD5, and verify file or text integrity checksums',
     badge: 'Crypto',
   },
+  {
+    id: 'unit-convert',
+    title: 'Unit & Dev Converter',
+    category: 'developer',
+    shortDesc: 'CSS px ⇄ rem typography, byte storage scaling, and Unix epoch timestamp decoder',
+    badge: 'Utility',
+  },
 ];
 
 const CATEGORIES: { id: Category; label: string; count: number }[] = [
   { id: 'media', label: 'Media & Documents', count: 2 },
-  { id: 'developer', label: 'Data & Formats', count: 6 },
+  { id: 'developer', label: 'Data & Formats', count: 7 },
   { id: 'security', label: 'Encoding & Security', count: 2 },
 ];
 
@@ -205,6 +227,17 @@ export function App() {
   const [hashCopiedAlgo, setHashCopiedAlgo] = useState<string | null>(null);
   const [isHashingFile, setIsHashingFile] = useState<boolean>(false);
   const hashFileInputRef = useRef<HTMLInputElement>(null);
+  // Unit & Measurement utility state
+  const [unitCategory, setUnitCategory] = useState<'css' | 'storage' | 'time'>('css');
+  const [cssPx, setCssPx] = useState<number>(16);
+  const [cssBaseSize, setCssBaseSize] = useState<number>(16);
+  const [cssResults, setCssResults] = useState<CssUnitResults>(() => convertCssUnits(16, 'px', 16));
+  const [storageAmount, setStorageAmount] = useState<number>(1024);
+  const [storageUnit, setStorageUnit] = useState<'B' | 'KB' | 'MB' | 'GB' | 'TB' | 'KiB' | 'MiB' | 'GiB' | 'TiB'>('MB');
+  const [storageResults, setStorageResults] = useState<DataUnitBreakdown>(() => convertDataStorage(1024, 'MB'));
+  const [timeInputVal, setTimeInputVal] = useState<string>(() => String(Math.floor(Date.now() / 1000)));
+  const [timeResults, setTimeResults] = useState<TimestampResults | null>(() => parseTimestampOrDate(Math.floor(Date.now() / 1000)));
+  const [unitCopiedKey, setUnitCopiedKey] = useState<string | null>(null);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState<boolean>(false);
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
   const [isOnline, setIsOnline] = useState<boolean>(() =>
@@ -301,7 +334,7 @@ export function App() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  const handleToolSelect = (toolId: ToolType) => {
+  const handleToolSelect = useCallback((toolId: ToolType) => {
     setActiveTool(toolId);
     setFiles([]);
     setResult(null);
@@ -321,11 +354,15 @@ export function App() {
       const sample = 'Hello, Multi-Converter!';
       setHashTextInput(sample);
       computeAllHashes(sample).then(setHashResult);
+    } else if (toolId === 'unit-convert') {
+      const nowSec = Math.floor(Date.now() / 1000);
+      setTimeInputVal(String(nowSec));
+      setTimeResults(parseTimestampOrDate(nowSec));
     } else {
       setTextInput('');
       setTextOutput('');
     }
-  };
+  }, [csvIndentation]);
 
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -773,6 +810,7 @@ export function App() {
                         {tool.id === 'markdown-html' && <BookOpen className="w-4 h-4" />}
                         {tool.id === 'csv-json' && <Table className="w-4 h-4" />}
                         {tool.id === 'hash-calc' && <Fingerprint className="w-4 h-4" />}
+                        {tool.id === 'unit-convert' && <Ruler className="w-4 h-4" />}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -2135,6 +2173,443 @@ export function App() {
                     );
                   })}
                 </div>
+
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
+
+            {/* 2.11 Unit & Developer Measurement Converter */}
+            {activeTool === 'unit-convert' && (
+              <div className="space-y-6">
+                {/* Mode Sub-Navigation */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-neutral-100/60 dark:bg-neutral-850/60 border border-neutral-200/80 dark:border-neutral-800">
+                  <div className="inline-flex rounded-lg border border-neutral-200 dark:border-neutral-700 p-0.5 text-xs bg-white/60 dark:bg-neutral-900/60">
+                    <button
+                      onClick={() => setUnitCategory('css')}
+                      className={`px-3 py-1.5 rounded-md font-medium transition inline-flex items-center gap-1.5 ${
+                        unitCategory === 'css'
+                          ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 shadow-xs'
+                          : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Ruler className="w-3.5 h-3.5" />
+                      <span>CSS px ⇄ rem</span>
+                    </button>
+                    <button
+                      onClick={() => setUnitCategory('storage')}
+                      className={`px-3 py-1.5 rounded-md font-medium transition inline-flex items-center gap-1.5 ${
+                        unitCategory === 'storage'
+                          ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 shadow-xs'
+                          : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <HardDrive className="w-3.5 h-3.5" />
+                      <span>Data Storage</span>
+                    </button>
+                    <button
+                      onClick={() => setUnitCategory('time')}
+                      className={`px-3 py-1.5 rounded-md font-medium transition inline-flex items-center gap-1.5 ${
+                        unitCategory === 'time'
+                          ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900 shadow-xs'
+                          : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Unix Timestamp</span>
+                    </button>
+                  </div>
+
+                  <span className="text-[11px] text-neutral-400 font-mono">
+                    Instant bi-directional calculation
+                  </span>
+                </div>
+
+                {/* Sub-tool 1: CSS Typography (px ⇄ rem ⇄ em ⇄ pt) */}
+                {unitCategory === 'css' && (
+                  <div className="space-y-6">
+                    {/* Base font size configuration */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/40 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-neutral-700 dark:text-neutral-300">Base Root Font Size (1rem):</span>
+                        <div className="inline-flex items-center gap-1">
+                          <input
+                            type="number"
+                            min="1"
+                            max="64"
+                            value={cssBaseSize}
+                            onChange={(e) => {
+                              const val = Math.max(1, Number(e.target.value) || 16);
+                              setCssBaseSize(val);
+                              setCssResults(convertCssUnits(cssPx, 'px', val));
+                            }}
+                            className="w-16 bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg px-2 py-1 text-xs font-mono text-center outline-none"
+                          />
+                          <span className="font-mono text-neutral-400">px</span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setCssBaseSize(16);
+                          setCssResults(convertCssUnits(cssPx, 'px', 16));
+                        }}
+                        className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                      >
+                        Reset to default (16px)
+                      </button>
+                    </div>
+
+                    {/* Dual bidirectional input grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Pixels (px) */}
+                      <div className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 space-y-2">
+                        <label className="text-[11px] font-mono uppercase text-neutral-500 font-semibold block">
+                          Pixels (px)
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="any"
+                            value={cssResults.px}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0;
+                              setCssPx(val);
+                              setCssResults(convertCssUnits(val, 'px', cssBaseSize));
+                            }}
+                            className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-2.5 font-mono text-sm font-semibold outline-none focus:border-neutral-900 dark:focus:border-neutral-100"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-neutral-400">px</span>
+                        </div>
+                      </div>
+
+                      {/* Root EM (rem) */}
+                      <div className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 space-y-2">
+                        <label className="text-[11px] font-mono uppercase text-neutral-500 font-semibold block">
+                          Root EM (rem)
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="any"
+                            value={cssResults.rem}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0;
+                              setCssResults(convertCssUnits(val, 'rem', cssBaseSize));
+                              setCssPx(val * cssBaseSize);
+                            }}
+                            className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-2.5 font-mono text-sm font-semibold outline-none focus:border-neutral-900 dark:focus:border-neutral-100"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-neutral-400">rem</span>
+                        </div>
+                      </div>
+
+                      {/* Relative EM (em) */}
+                      <div className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 space-y-2">
+                        <label className="text-[11px] font-mono uppercase text-neutral-500 font-semibold block">
+                          Relative EM (em)
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="any"
+                            value={cssResults.em}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0;
+                              setCssResults(convertCssUnits(val, 'em', cssBaseSize));
+                              setCssPx(val * cssBaseSize);
+                            }}
+                            className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-2.5 font-mono text-sm font-semibold outline-none focus:border-neutral-900 dark:focus:border-neutral-100"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-neutral-400">em</span>
+                        </div>
+                      </div>
+
+                      {/* Points (pt) */}
+                      <div className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 space-y-2">
+                        <label className="text-[11px] font-mono uppercase text-neutral-500 font-semibold block">
+                          Points (pt)
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            step="any"
+                            value={cssResults.pt}
+                            onChange={(e) => {
+                              const val = Number(e.target.value) || 0;
+                              setCssResults(convertCssUnits(val, 'pt', cssBaseSize));
+                              setCssPx((val * 96) / 72);
+                            }}
+                            className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-2.5 font-mono text-sm font-semibold outline-none focus:border-neutral-900 dark:focus:border-neutral-100"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-neutral-400">pt</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Common Font Size Preset Chips */}
+                    <div className="space-y-2">
+                      <span className="text-[11px] font-mono uppercase text-neutral-500 font-semibold block">
+                        Quick Typography Scale Presets
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {[10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 64].map((pxVal) => {
+                          const remVal = (pxVal / cssBaseSize).toFixed(pxVal % cssBaseSize === 0 ? 0 : 3);
+                          const isCurrent = cssResults.px === pxVal;
+                          return (
+                            <button
+                              key={pxVal}
+                              onClick={() => {
+                                setCssPx(pxVal);
+                                setCssResults(convertCssUnits(pxVal, 'px', cssBaseSize));
+                              }}
+                              className={`px-3 py-1.5 rounded-lg border text-xs font-mono transition ${
+                                isCurrent
+                                  ? 'border-neutral-900 dark:border-neutral-100 bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                                  : 'border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 hover:border-neutral-400 text-neutral-700 dark:text-neutral-300'
+                              }`}
+                            >
+                              <span>{pxVal}px</span>
+                              <span className="text-[10px] opacity-70 ml-1">({remVal}rem)</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* CSS Code Generator Snippet */}
+                    <div className="p-3.5 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 flex items-center justify-between">
+                      <div className="font-mono text-xs text-neutral-800 dark:text-neutral-200">
+                        <span className="text-emerald-600 dark:text-emerald-400">font-size:</span>{' '}
+                        {cssResults.rem}rem; <span className="text-neutral-400">/* {cssResults.px}px */</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`font-size: ${cssResults.rem}rem; /* ${cssResults.px}px */`);
+                          setUnitCopiedKey('css-snippet');
+                          setTimeout(() => setUnitCopiedKey(null), 2000);
+                        }}
+                        className="inline-flex items-center gap-1 text-[11px] text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition font-medium cursor-pointer"
+                      >
+                        {unitCopiedKey === 'css-snippet' ? (
+                          <Check className="w-3 h-3 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3 h-3" />
+                        )}
+                        <span>{unitCopiedKey === 'css-snippet' ? 'Copied' : 'Copy CSS'}</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sub-tool 2: Data Storage (Bytes, KB, MB, GB, TB) */}
+                {unitCategory === 'storage' && (
+                  <div className="space-y-6">
+                    {/* Amount & Unit Selector Input */}
+                    <div className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 flex flex-wrap items-center gap-3">
+                      <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                        Convert Data Value:
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={storageAmount}
+                        onChange={(e) => {
+                          const val = Number(e.target.value) || 0;
+                          setStorageAmount(val);
+                          setStorageResults(convertDataStorage(val, storageUnit));
+                        }}
+                        className="w-36 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-2 font-mono text-sm font-semibold outline-none"
+                      />
+                      <select
+                        value={storageUnit}
+                        onChange={(e) => {
+                          const u = e.target.value as typeof storageUnit;
+                          setStorageUnit(u);
+                          setStorageResults(convertDataStorage(storageAmount, u));
+                        }}
+                        className="bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-2 font-mono text-sm font-semibold outline-none"
+                      >
+                        <option value="B">Bytes (B)</option>
+                        <option value="KB">Kilobytes (KB - 1,000 B)</option>
+                        <option value="MB">Megabytes (MB - 1,000 KB)</option>
+                        <option value="GB">Gigabytes (GB - 1,000 MB)</option>
+                        <option value="TB">Terabytes (TB - 1,000 GB)</option>
+                        <option value="KiB">Kibibytes (KiB - 1,024 B)</option>
+                        <option value="MiB">Mebibytes (MiB - 1,024 KiB)</option>
+                        <option value="GiB">Gibibytes (GiB - 1,024 MiB)</option>
+                        <option value="TiB">Tebibytes (TiB - 1,024 GiB)</option>
+                      </select>
+                    </div>
+
+                    {/* Breakdown grids */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Decimal SI Standards */}
+                      <div className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/40 space-y-3">
+                        <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
+                          <span className="text-xs font-semibold text-neutral-900 dark:text-white">
+                            Decimal Metric Units (Base 10)
+                          </span>
+                          <span className="text-[10px] font-mono text-neutral-400">1 KB = 1,000 Bytes</span>
+                        </div>
+                        <div className="space-y-2">
+                          {[
+                            { key: 'bytes', label: 'Bytes (B)', val: storageResults.bytes },
+                            { key: 'kb', label: 'Kilobytes (KB)', val: storageResults.kb },
+                            { key: 'mb', label: 'Megabytes (MB)', val: storageResults.mb },
+                            { key: 'gb', label: 'Gigabytes (GB)', val: storageResults.gb },
+                            { key: 'tb', label: 'Terabytes (TB)', val: storageResults.tb },
+                          ].map((item) => (
+                            <div key={item.key} className="flex items-center justify-between text-xs py-1">
+                              <span className="text-neutral-500 font-mono">{item.label}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">
+                                  {item.val.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(String(item.val));
+                                    setUnitCopiedKey(item.key);
+                                    setTimeout(() => setUnitCopiedKey(null), 2000);
+                                  }}
+                                  className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                                >
+                                  {unitCopiedKey === item.key ? (
+                                    <Check className="w-3 h-3 text-emerald-500" />
+                                  ) : (
+                                    <Copy className="w-3 h-3" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Binary IEC Standards */}
+                      <div className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/60 dark:bg-neutral-900/40 space-y-3">
+                        <div className="flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800 pb-2">
+                          <span className="text-xs font-semibold text-neutral-900 dark:text-white">
+                            Binary IEC Units (Base 2)
+                          </span>
+                          <span className="text-[10px] font-mono text-neutral-400">1 KiB = 1,024 Bytes</span>
+                        </div>
+                        <div className="space-y-2">
+                          {[
+                            { key: 'kib', label: 'Kibibytes (KiB)', val: storageResults.kib },
+                            { key: 'mib', label: 'Mebibytes (MiB)', val: storageResults.mib },
+                            { key: 'gib', label: 'Gibibytes (GiB)', val: storageResults.gib },
+                            { key: 'tib', label: 'Tebibytes (TiB)', val: storageResults.tib },
+                          ].map((item) => (
+                            <div key={item.key} className="flex items-center justify-between text-xs py-1">
+                              <span className="text-neutral-500 font-mono">{item.label}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-semibold text-neutral-900 dark:text-neutral-100">
+                                  {item.val.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(String(item.val));
+                                    setUnitCopiedKey(item.key);
+                                    setTimeout(() => setUnitCopiedKey(null), 2000);
+                                  }}
+                                  className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                                >
+                                  {unitCopiedKey === item.key ? (
+                                    <Check className="w-3 h-3 text-emerald-500" />
+                                  ) : (
+                                    <Copy className="w-3 h-3" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sub-tool 3: Unix Timestamp & Date */}
+                {unitCategory === 'time' && (
+                  <div className="space-y-6">
+                    {/* Timestamp Input & "Now" Button */}
+                    <div className="p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 space-y-2">
+                      <div className="flex items-center justify-between text-xs text-neutral-500">
+                        <label className="font-semibold text-neutral-800 dark:text-neutral-200">
+                          Unix Timestamp or ISO Date:
+                        </label>
+                        <button
+                          onClick={() => {
+                            const nowSec = Math.floor(Date.now() / 1000);
+                            setTimeInputVal(String(nowSec));
+                            setTimeResults(parseTimestampOrDate(nowSec));
+                          }}
+                          className="text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:underline inline-flex items-center gap-1"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          <span>Set to Current Time (Now)</span>
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={timeInputVal}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setTimeInputVal(val);
+                          setTimeResults(parseTimestampOrDate(val));
+                        }}
+                        placeholder="Enter Unix seconds, milliseconds, or ISO date string (e.g. 1773919200)..."
+                        className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-2.5 font-mono text-sm text-neutral-900 dark:text-neutral-100 outline-none focus:border-neutral-900 dark:focus:border-neutral-100"
+                      />
+                    </div>
+
+                    {/* Converted timestamp cards */}
+                    {timeResults ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {[
+                          { key: 'sec', label: 'Epoch Seconds', val: String(timeResults.epochSeconds) },
+                          { key: 'ms', label: 'Epoch Milliseconds', val: String(timeResults.epochMs) },
+                          { key: 'iso', label: 'ISO 8601 (UTC)', val: timeResults.iso },
+                          { key: 'utc', label: 'UTC String', val: timeResults.utc },
+                          { key: 'local', label: 'Local Date & Time', val: timeResults.local },
+                          { key: 'relative', label: 'Relative Human Time', val: timeResults.relative },
+                        ].map((item) => (
+                          <div
+                            key={item.key}
+                            className="p-3.5 rounded-xl border border-neutral-200/80 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 flex items-center justify-between"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <span className="text-[10px] font-mono uppercase text-neutral-400 font-semibold block">
+                                {item.label}
+                              </span>
+                              <span className="font-mono text-xs font-semibold text-neutral-900 dark:text-neutral-100 break-all select-all">
+                                {item.val}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(item.val);
+                                setUnitCopiedKey(item.key);
+                                setTimeout(() => setUnitCopiedKey(null), 2000);
+                              }}
+                              className="p-1.5 text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 shrink-0"
+                            >
+                              {unitCopiedKey === item.key ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-400 text-xs">
+                        Invalid date or timestamp. Please enter a valid number or ISO date.
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <AdSlot placement="post-conversion" />
               </div>

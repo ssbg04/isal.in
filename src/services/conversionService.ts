@@ -8,7 +8,8 @@ export type ToolType =
   | 'color-convert'
   | 'markdown-html'
   | 'csv-json'
-  | 'hash-calc';
+  | 'hash-calc'
+  | 'unit-convert';
 
 export interface ConversionResult {
   filename: string;
@@ -678,6 +679,118 @@ export async function computeAllHashes(data: string | ArrayBuffer): Promise<Hash
     md5: md5(uint8),
   };
 }
+
+export interface CssUnitResults {
+  px: number;
+  rem: number;
+  em: number;
+  pt: number;
+}
+
+export function convertCssUnits(val: number, from: 'px' | 'rem' | 'em' | 'pt', baseFontSize: number = 16): CssUnitResults {
+  const safeBase = baseFontSize > 0 ? baseFontSize : 16;
+  let pxVal = val;
+  if (from === 'rem' || from === 'em') {
+    pxVal = val * safeBase;
+  } else if (from === 'pt') {
+    pxVal = (val * 96) / 72;
+  }
+
+  return {
+    px: Number(pxVal.toFixed(2)),
+    rem: Number((pxVal / safeBase).toFixed(4)),
+    em: Number((pxVal / safeBase).toFixed(4)),
+    pt: Number(((pxVal * 72) / 96).toFixed(2)),
+  };
+}
+
+export interface DataUnitBreakdown {
+  bytes: number;
+  kb: number;
+  mb: number;
+  gb: number;
+  tb: number;
+  kib: number;
+  mib: number;
+  gib: number;
+  tib: number;
+}
+
+export function convertDataStorage(val: number, fromUnit: 'B' | 'KB' | 'MB' | 'GB' | 'TB' | 'KiB' | 'MiB' | 'GiB' | 'TiB'): DataUnitBreakdown {
+  const multipliers: Record<string, number> = {
+    B: 1,
+    KB: 1000,
+    MB: 1000 ** 2,
+    GB: 1000 ** 3,
+    TB: 1000 ** 4,
+    KiB: 1024,
+    MiB: 1024 ** 2,
+    GiB: 1024 ** 3,
+    TiB: 1024 ** 4,
+  };
+
+  const bytes = val * (multipliers[fromUnit] || 1);
+
+  return {
+    bytes,
+    kb: bytes / 1000,
+    mb: bytes / (1000 ** 2),
+    gb: bytes / (1000 ** 3),
+    tb: bytes / (1000 ** 4),
+    kib: bytes / 1024,
+    mib: bytes / (1024 ** 2),
+    gib: bytes / (1024 ** 3),
+    tib: bytes / (1024 ** 4),
+  };
+}
+
+export interface TimestampResults {
+  epochSeconds: number;
+  epochMs: number;
+  iso: string;
+  utc: string;
+  local: string;
+  relative: string;
+}
+
+export function parseTimestampOrDate(input: string | number): TimestampResults | null {
+  let date: Date;
+  if (typeof input === 'number' || (!isNaN(Number(input)) && String(input).trim() !== '')) {
+    const num = Number(input);
+    const ms = num < 1e11 ? num * 1000 : num;
+    date = new Date(ms);
+  } else {
+    date = new Date(input);
+  }
+
+  if (isNaN(date.getTime())) return null;
+
+  const ms = date.getTime();
+  const sec = Math.floor(ms / 1000);
+  const diffSec = Math.floor((ms - Date.now()) / 1000);
+
+  let relative = '';
+  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+  if (Math.abs(diffSec) < 60) {
+    relative = rtf.format(diffSec, 'second');
+  } else if (Math.abs(diffSec) < 3600) {
+    relative = rtf.format(Math.round(diffSec / 60), 'minute');
+  } else if (Math.abs(diffSec) < 86400) {
+    relative = rtf.format(Math.round(diffSec / 3600), 'hour');
+  } else {
+    relative = rtf.format(Math.round(diffSec / 86400), 'day');
+  }
+
+  return {
+    epochSeconds: sec,
+    epochMs: ms,
+    iso: date.toISOString(),
+    utc: date.toUTCString(),
+    local: date.toLocaleString(),
+    relative,
+  };
+}
+
 
 
 
