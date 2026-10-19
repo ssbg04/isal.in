@@ -22,5 +22,11 @@ export const APP_LIMITS: { free: UsageLimits; pro: UsageLimits } = {
 
 export const AD_CONFIG = {
   enabled: true,
-  showMockBannersInDev: true,
+  // Official EthicalAds demo publisher is 'ethicalads' (shows live test ads).
+  // Once your site is approved by EthicalAds, replace 'ethicalads' with your custom Publisher ID.
+  ethicalAdsPublisher: 'ethicalads',
+  // EthicalAds recommends 1 prominent placement per page view (e.g. 'sidebar' or 'header')
+  primaryPlacement: 'sidebar' as 'header' | 'sidebar' | 'between-content' | 'post-conversion',
+  // Show clean mock banner card if ads are blocked or loading
+  showMockFallback: true,
 };

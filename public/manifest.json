@@ -1,0 +1,21 @@
+{
+  "name": "Multi-Converter — Client-Side Utilities",
+  "short_name": "Multi-Converter",
+  "description": "Fast, 100% private in-browser conversions for Images, PDFs, JSON, YAML, Base64, and UUIDs. Zero server uploads.",
+  "start_url": "/",
+  "id": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "categories": ["utilities", "productivity", "developer tools"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "48x48 72x72 96x96 128x128 192x192 256x256 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
