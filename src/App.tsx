@@ -37,6 +37,7 @@ import { PrivacyModal } from './components/PrivacyModal';
 import { BrandLogo } from './components/BrandLogo';
 import { ImageCompareSlider } from './components/ImageCompareSlider';
 import { DualPaneCodeWorkspace } from './components/DualPaneCodeWorkspace';
+import { CommandPalette } from './components/CommandPalette';
 import type {
   ToolType,
   ConversionResult,
@@ -254,6 +255,7 @@ export function App() {
   const [timeResults, setTimeResults] = useState<TimestampResults | null>(() => parseTimestampOrDate(Math.floor(Date.now() / 1000)));
   const [unitCopiedKey, setUnitCopiedKey] = useState<string | null>(null);
   const [isPrivacyOpen, setIsPrivacyOpen] = useState<boolean>(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState<boolean>(false);
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
   const [isOnline, setIsOnline] = useState<boolean>(() =>
     typeof navigator !== 'undefined' ? navigator.onLine : true
@@ -386,6 +388,38 @@ export function App() {
       setTextOutput('');
     }
   }, [csvIndentation]);
+
+  const handlePaletteSelectTool = useCallback(
+    (toolId: ToolType, initialInput?: string) => {
+      handleToolSelect(toolId);
+      if (initialInput) {
+        setTextInput(initialInput);
+        if (toolId === 'color-convert') {
+          setColorInput(initialInput);
+          setColorData(parseColor(initialInput));
+        } else if (toolId === 'hash-calc') {
+          setHashTextInput(initialInput);
+          computeAllHashes(initialInput).then(setHashResult);
+        }
+      }
+      setTimeout(() => {
+        document.getElementById('tool-workspace')?.scrollIntoView({ behavior: 'smooth' });
+      }, 50);
+    },
+    [handleToolSelect]
+  );
+
+  // Global ⌘K / Ctrl+K Command Palette Shortcut Listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -825,6 +859,28 @@ export function App() {
           </div>
 
           <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Quick Command Palette Button (⌘K / Ctrl+K) */}
+            <button
+              onClick={() => setIsPaletteOpen(true)}
+              className="hidden sm:inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl text-xs text-neutral-500 hover:text-neutral-900 dark:hover:text-white glass-panel border border-neutral-200/80 dark:border-white/10 hover:border-amber-500/40 transition cursor-pointer shadow-2xs"
+              title="Quick tool search and switcher (Ctrl+K or ⌘K)"
+            >
+              <Search className="w-3.5 h-3.5 text-neutral-400" />
+              <span>Search tools...</span>
+              <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-400">
+                ⌘K
+              </kbd>
+            </button>
+
+            {/* Mobile Search Button */}
+            <button
+              onClick={() => setIsPaletteOpen(true)}
+              className="sm:hidden w-9 h-9 rounded-xl border border-neutral-200/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition cursor-pointer"
+              aria-label="Search tools"
+            >
+              <Search className="w-4 h-4 text-neutral-400" />
+            </button>
+
             {/* Install PWA Button */}
             {installPrompt && (
               <button
@@ -999,7 +1055,7 @@ export function App() {
         <div className="lg:col-span-8 space-y-6">
           
           {/* Active Utility Workspace Card */}
-          <div className="glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-neutral-200/80 dark:border-white/10 relative overflow-hidden">
+          <div id="tool-workspace" className="glass-card rounded-3xl p-6 sm:p-8 shadow-xl border border-neutral-200/80 dark:border-white/10 relative overflow-hidden">
             {/* Top Specular Glow Edge */}
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/40 dark:via-amber-400/30 to-transparent pointer-events-none" />
 
@@ -2908,6 +2964,12 @@ export function App() {
       </footer>
 
       <PrivacyModal isOpen={isPrivacyOpen} onClose={() => setIsPrivacyOpen(false)} />
+      <CommandPalette
+        isOpen={isPaletteOpen}
+        onClose={() => setIsPaletteOpen(false)}
+        tools={TOOLS}
+        onSelectTool={handlePaletteSelectTool}
+      />
 
       {/* Window-wide Drag and Drop Overlay */}
       {isDraggingWindow && (
