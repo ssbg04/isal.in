@@ -19,7 +19,6 @@ import {
   Share2,
   DownloadCloud,
   WifiOff,
-  FolderArchive,
   Palette,
   BookOpen,
   Search,
@@ -43,6 +42,7 @@ import {
   type HistoryItem,
   type PresetWorkflow,
 } from './components/HistoryPresetsDrawer';
+import { BatchQueueManager } from './components/BatchQueueManager';
 import type {
   ToolType,
   ConversionResult,
@@ -211,6 +211,7 @@ export function App() {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [result, setResult] = useState<ConversionResult | null>(null);
   const [batchResults, setBatchResults] = useState<ConversionResult[]>([]);
+  const [selectedResultIndex, setSelectedResultIndex] = useState<number>(0);
   const [isZipping, setIsZipping] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -615,6 +616,72 @@ export function App() {
       }
       return null;
     });
+  };
+
+  const handleRemoveFile = (index: number) => {
+    const updated = files.filter((_, i) => i !== index);
+    setFiles(updated);
+    if (batchResults.length > 0) {
+      const updatedResults = batchResults.filter((_, i) => i !== index);
+      setBatchResults(updatedResults);
+      if (updatedResults.length > 0) {
+        setResult(updatedResults[0]);
+        setSelectedResultIndex(0);
+      } else {
+        setResult(null);
+      }
+    }
+    if (updated.length > 0) {
+      setOriginalPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(updated[0]);
+      });
+    } else {
+      setOriginalPreviewUrl(null);
+      setResult(null);
+    }
+  };
+
+  const handleClearFiles = () => {
+    setFiles([]);
+    setBatchResults([]);
+    setResult(null);
+    setSelectedResultIndex(0);
+    setOriginalPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
+  const handleAddMoreFiles = (newFiles: File[]) => {
+    validateAndSetFiles([...files, ...newFiles]);
+  };
+
+  const handleReorderFiles = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= files.length) return;
+    const reordered = [...files];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+    setFiles(reordered);
+    if (batchResults.length > 0) {
+      const reorderedResults = [...batchResults];
+      const [movedRes] = reorderedResults.splice(fromIndex, 1);
+      reorderedResults.splice(toIndex, 0, movedRes);
+      setBatchResults(reorderedResults);
+    }
+  };
+
+  const handleSelectBatchResult = (index: number) => {
+    setSelectedResultIndex(index);
+    if (batchResults[index]) {
+      setResult(batchResults[index]);
+      if (files[index]) {
+        setOriginalPreviewUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(files[index]);
+        });
+      }
+    }
   };
 
   const handleLoadSampleImage = () => {
@@ -1405,21 +1472,24 @@ export function App() {
                   />
                 </div>
 
-                {/* Selected Files Preview List */}
+                {/* Interactive Batch Queue Manager */}
                 {files.length > 0 && (
-                  <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950/30 p-3.5">
-                    <div className="text-[11px] font-mono uppercase tracking-wider text-neutral-500 mb-2">
-                      Selected File{files.length > 1 ? 's' : ''} ({files.length})
-                    </div>
-                    <ul className="space-y-1.5 text-xs text-neutral-700 dark:text-neutral-300">
-                      {files.map((f, i) => (
-                        <li key={i} className="flex items-center justify-between py-1 px-2 rounded bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/50">
-                          <span className="truncate max-w-[240px] sm:max-w-md font-mono">{f.name}</span>
-                          <span className="text-neutral-400 font-mono">{(f.size / (1024 * 1024)).toFixed(2)} MB</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <BatchQueueManager
+                    files={files}
+                    onRemoveFile={handleRemoveFile}
+                    onClearFiles={handleClearFiles}
+                    onAddFiles={handleAddMoreFiles}
+                    onReorderFiles={handleReorderFiles}
+                    targetFormat={targetImageFormat}
+                    onTargetFormatChange={setTargetImageFormat}
+                    isProcessing={isProcessing}
+                    batchResults={batchResults}
+                    selectedResultIndex={selectedResultIndex}
+                    onSelectResult={handleSelectBatchResult}
+                    onDownloadZip={handleDownloadZip}
+                    isZipping={isZipping}
+                    mode={activeTool as 'image-convert' | 'images-to-pdf'}
+                  />
                 )}
 
                 {/* Additional Settings for Image Converter */}
@@ -1497,114 +1567,6 @@ export function App() {
                   </kbd>
                 </button>
 
-                {/* Batch Image Conversion Results */}
-                {batchResults.length > 1 && activeTool === 'image-convert' && (
-                  <div className="mt-4 p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-950/60 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-                          Batch Output ({batchResults.length} files)
-                        </h4>
-                        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                          Converted to {targetImageFormat.split('/')[1].toUpperCase()} locally in-browser
-                        </p>
-                      </div>
-
-                      {/* Total Savings Badge */}
-                      {(() => {
-                        const totalOrig = batchResults.reduce((sum, item) => sum + (item.originalSizeBytes || 0), 0);
-                        const totalNew = batchResults.reduce((sum, item) => sum + (item.sizeBytes || 0), 0);
-                        const diff = totalOrig - totalNew;
-                        const pct = totalOrig > 0 ? Math.round((diff / totalOrig) * 100) : 0;
-                        if (pct > 0) {
-                          return (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 self-start sm:self-auto">
-                              Saved {pct}% ({(diff / (1024 * 1024)).toFixed(2)} MB less)
-                            </span>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </div>
-
-                    {/* Download All as ZIP Button */}
-                    <button
-                      onClick={handleDownloadZip}
-                      disabled={isZipping}
-                      className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium text-xs sm:text-sm rounded-lg flex items-center justify-center gap-2 transition shadow-xs"
-                    >
-                      <FolderArchive className="w-4 h-4" />
-                      <span>{isZipping ? 'Archiving files into ZIP...' : 'Download All as .ZIP Archive'}</span>
-                    </button>
-
-                    {/* Itemized Converted Files List */}
-                    <div className="space-y-2 pt-1 max-h-60 overflow-y-auto pr-1">
-                      {batchResults.map((item, idx) => {
-                        const isSelectedItem = result?.filename === item.filename;
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setResult(item);
-                              const matched = files.find((f) =>
-                                item.filename.toLowerCase().includes(f.name.replace(/\.[^/.]+$/, '').toLowerCase())
-                              );
-                              if (matched) {
-                                setOriginalPreviewUrl((prev) => {
-                                  if (prev) URL.revokeObjectURL(prev);
-                                  return URL.createObjectURL(matched);
-                                });
-                              }
-                            }}
-                            className={`flex items-center justify-between p-2.5 rounded-xl border text-xs cursor-pointer transition ${
-                              isSelectedItem
-                                ? 'border-amber-500/50 bg-amber-500/10 dark:bg-amber-500/15 ring-1 ring-amber-500/20'
-                                : 'border-neutral-200/60 dark:border-neutral-800/60 bg-white/70 dark:bg-neutral-900/70 hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              {item.downloadUrl && (
-                                <img
-                                  src={item.downloadUrl}
-                                  alt="thumb"
-                                  className="w-8 h-8 rounded-lg object-cover border border-neutral-200 dark:border-neutral-800 shrink-0"
-                                />
-                              )}
-                              <div className="min-w-0 truncate">
-                                <p className="font-mono truncate text-neutral-800 dark:text-neutral-200 font-medium">
-                                  {item.filename}
-                                </p>
-                                {item.sizeBytes && (
-                                  <p className="text-[10px] text-neutral-400 font-mono">
-                                    {(item.sizeBytes / 1024).toFixed(1)} KB
-                                    {item.originalSizeBytes && item.sizeBytes < item.originalSizeBytes && (
-                                      <span className="text-emerald-500 ml-1.5 font-semibold">
-                                        (-{Math.round(((item.originalSizeBytes - item.sizeBytes) / item.originalSizeBytes) * 100)}%)
-                                      </span>
-                                    )}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            <a
-                              href={item.downloadUrl}
-                              download={item.filename}
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 font-medium transition shrink-0 ml-2 cursor-pointer"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Download</span>
-                            </a>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <AdSlot placement="post-conversion" />
-                  </div>
-                )}
-
                 {/* Interactive Image Comparison Slider (for Single or Selected Batch Image) */}
                 {activeTool === 'image-convert' && result?.downloadUrl && originalPreviewUrl && (
                   <div className="mt-5 space-y-4">
@@ -1612,7 +1574,9 @@ export function App() {
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
                         <h3 className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
-                          Interactive Visual Quality Comparison
+                          {files.length > 1
+                            ? `Visual Comparison: File #${selectedResultIndex + 1} (${files[selectedResultIndex]?.name || 'Image'})`
+                            : 'Interactive Visual Quality Comparison'}
                         </h3>
                       </div>
                       <span className="text-[11px] font-mono text-neutral-400 hidden sm:inline">
@@ -1623,11 +1587,11 @@ export function App() {
                     <ImageCompareSlider
                       originalUrl={originalPreviewUrl}
                       convertedUrl={result.downloadUrl}
-                      originalName={files[0]?.name || 'Original Image'}
+                      originalName={files[selectedResultIndex]?.name || files[0]?.name || 'Original Image'}
                       convertedName={result.filename}
-                      originalSizeBytes={files[0]?.size}
+                      originalSizeBytes={files[selectedResultIndex]?.size || files[0]?.size}
                       convertedSizeBytes={result.sizeBytes}
-                      originalFormat={files[0]?.type.split('/')[1]?.toUpperCase()}
+                      originalFormat={files[selectedResultIndex]?.type.split('/')[1]?.toUpperCase() || files[0]?.type.split('/')[1]?.toUpperCase()}
                       convertedFormat={targetImageFormat.split('/')[1]?.toUpperCase()}
                       onDownload={() => {
                         if (result.downloadUrl) {
