@@ -308,19 +308,11 @@ const CATEGORIES: { id: Category; label: string; count: number }[] = [
   { id: 'calculators', label: 'Calculators & PH', count: 5 },
 ];
 
-const getToolCategoryColor = (category: Category, isSelected: boolean) => {
+const getToolCategoryColor = (_category: Category, isSelected: boolean) => {
   if (isSelected) {
-    if (category === 'media') return 'bg-amber-500 text-neutral-950 shadow-sm shadow-amber-500/20 font-bold';
-    if (category === 'security') return 'bg-amber-600 text-white shadow-sm shadow-amber-600/20 font-bold';
-    if (category === 'units') return 'bg-blue-600 text-white shadow-sm shadow-blue-600/20 font-bold';
-    if (category === 'calculators') return 'bg-rose-600 text-white shadow-sm shadow-rose-600/20 font-bold';
-    return 'bg-blue-600 text-white shadow-sm shadow-blue-600/20 font-bold';
+    return 'bg-amber-500 text-neutral-950 font-bold shadow-sm shadow-amber-500/20';
   }
-  if (category === 'media') return 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20';
-  if (category === 'security') return 'bg-amber-600/10 text-amber-800 dark:text-amber-400 border border-amber-600/20 group-hover:bg-amber-600/20';
-  if (category === 'units') return 'bg-blue-600/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20';
-  if (category === 'calculators') return 'bg-rose-600/10 text-rose-700 dark:text-rose-400 border border-rose-500/20 group-hover:bg-rose-500/20';
-  return 'bg-blue-600/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20';
+  return 'glass-panel text-neutral-700 dark:text-neutral-300 border border-neutral-300/80 dark:border-white/10 hover:border-amber-500/40 hover:text-neutral-950 dark:hover:text-white';
 };
 
 export function App() {
@@ -1418,7 +1410,7 @@ export function App() {
   });
 
   return (
-    <div className="min-h-screen bg-[#fafafa] dark:bg-[#0c0e14] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-300 relative selection:bg-amber-500/30 selection:text-amber-900 dark:selection:bg-amber-400/20 dark:selection:text-amber-200">
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090a0f] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-300 relative selection:bg-amber-500/30 selection:text-amber-900 dark:selection:bg-amber-400/20 dark:selection:text-amber-200">
       {/* Skip to Main Content Link for Keyboard and Screen Reader Accessibility */}
       <a
         href="#tool-workspace"
@@ -1427,11 +1419,9 @@ export function App() {
         Skip to main converter
       </a>
 
-      {/* Background Ambient Mesh Lighting & Grid Accents (Philippine Tri-Color: Sun, Ocean Blue & Festive Crimson) */}
+      {/* Minimalist Ambient Aura (Subtle Golden Sun Glow fading into Deep Obsidian) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[700px] h-[380px] bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-transparent blur-3xl rounded-full dark:from-amber-500/15 dark:via-amber-400/5" />
-        <div className="absolute top-1/4 -right-32 w-[500px] h-[500px] bg-blue-600/5 dark:bg-blue-600/10 blur-3xl rounded-full" />
-        <div className="absolute bottom-10 -left-32 w-[450px] h-[450px] bg-rose-600/5 dark:bg-rose-600/10 blur-3xl rounded-full" />
+        <div className="absolute -top-48 left-1/2 -translate-x-1/2 w-[800px] h-[360px] bg-gradient-to-b from-amber-500/8 via-amber-500/2 to-transparent blur-3xl rounded-full dark:from-amber-500/10 dark:via-amber-500/2 pointer-events-none" />
       </div>
 
       {/* Sleek Glassmorphic Top App Bar */}

@@ -79,38 +79,6 @@ const CATEGORY_NAMES: Record<Category, string> = {
   calculators: 'Calculators & Finance',
 };
 
-const CATEGORY_COLORS: Record<Category, { bg: string; text: string; border: string; glow: string }> = {
-  media: {
-    bg: 'bg-amber-500/10 dark:bg-amber-500/15',
-    text: 'text-amber-700 dark:text-amber-400',
-    border: 'border-amber-500/30',
-    glow: 'group-hover:border-amber-500/60',
-  },
-  developer: {
-    bg: 'bg-blue-600/10 dark:bg-blue-600/15',
-    text: 'text-blue-700 dark:text-blue-400',
-    border: 'border-blue-500/30',
-    glow: 'group-hover:border-blue-500/60',
-  },
-  security: {
-    bg: 'bg-amber-600/10 dark:bg-amber-600/15',
-    text: 'text-amber-800 dark:text-amber-400',
-    border: 'border-amber-600/30',
-    glow: 'group-hover:border-amber-600/60',
-  },
-  units: {
-    bg: 'bg-blue-500/10 dark:bg-blue-500/15',
-    text: 'text-blue-600 dark:text-blue-300',
-    border: 'border-blue-500/30',
-    glow: 'group-hover:border-blue-500/60',
-  },
-  calculators: {
-    bg: 'bg-rose-600/10 dark:bg-rose-600/15',
-    text: 'text-rose-700 dark:text-rose-400',
-    border: 'border-rose-500/30',
-    glow: 'group-hover:border-rose-500/60',
-  },
-};
 
 const TOOL_ICONS: Record<ToolType, React.ComponentType<{ className?: string }>> = {
   'image-convert': FileImage,
@@ -437,7 +405,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <div className="space-y-1 mt-1">
                   {filteredTools.map((t, idx) => {
                     const Icon = TOOL_ICONS[t.id] || FileImage;
-                    const cat = CATEGORY_COLORS[t.category];
                     const isHighlighted = idx === highlightedIndex;
                     return (
                       <button
@@ -459,7 +426,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${cat.bg} ${cat.text}`}>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400">
                             <Icon className="w-4 h-4" />
                           </div>
                           <div className="min-w-0">
@@ -538,7 +505,7 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
 
-        {/* Category Filter Pills */}
+        {/* Category Filter Pills (Monochrome Foundation + Golden Sun Active Accent) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
           {categories.map((cat) => {
             const isSelected = selectedCategory === cat.id;
@@ -548,16 +515,16 @@ export const HomePage: React.FC<HomePageProps> = ({
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none ${
                   isSelected
-                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-950 shadow-sm'
-                    : 'glass-panel border border-neutral-300/80 dark:border-white/10 text-neutral-800 dark:text-neutral-200 hover:border-neutral-400 dark:hover:border-white/20'
+                    ? 'bg-neutral-900 text-white dark:bg-amber-500 dark:text-neutral-950 shadow-sm shadow-amber-500/20 font-bold'
+                    : 'glass-panel border border-neutral-200 dark:border-white/10 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:border-neutral-300 dark:hover:border-white/20'
                 }`}
               >
                 <span>{cat.label}</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                     isSelected
-                      ? 'bg-neutral-700 text-white dark:bg-neutral-200 dark:text-neutral-900 font-bold'
-                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-medium'
+                      ? 'bg-neutral-800 text-white dark:bg-amber-600/30 dark:text-neutral-950 font-bold'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 font-medium'
                   }`}
                 >
                   {cat.count}
@@ -567,11 +534,10 @@ export const HomePage: React.FC<HomePageProps> = ({
           })}
         </div>
 
-        {/* Compact Consistent Tool Cards Grid */}
+        {/* Compact Consistent Tool Cards Grid (Unified Monochrome Luxury + Golden Spark) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {filteredTools.map((tool) => {
             const Icon = TOOL_ICONS[tool.id] || FileImage;
-            const cat = CATEGORY_COLORS[tool.category];
             const isPopular = POPULAR_PRESETS.some((p) => p.toolId === tool.id);
 
             return (
@@ -580,42 +546,42 @@ export const HomePage: React.FC<HomePageProps> = ({
                 onClick={() => onSelectTool(tool.id)}
                 role="link"
                 aria-label={`Open ${tool.title}: ${tool.shortDesc}`}
-                className="group relative p-4 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/10 hover:border-amber-500/60 dark:hover:border-amber-400/60 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-amber-500/5 text-left flex flex-col justify-between cursor-pointer min-h-[148px] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 focus-visible:outline-none"
+                className="group relative p-4 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/[0.08] hover:border-amber-500/50 dark:hover:border-amber-500/50 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-amber-500/5 text-left flex flex-col justify-between cursor-pointer min-h-[148px] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 focus-visible:outline-none"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2.5 mb-3">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${cat.bg} ${cat.text} ${cat.border} transition-transform group-hover:scale-105`}>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 border border-neutral-200/80 dark:border-white/5 transition-all duration-200 group-hover:scale-105 group-hover:text-amber-500 dark:group-hover:text-amber-400 group-hover:bg-amber-500/10 group-hover:border-amber-500/30">
                         <Icon className="w-5 h-5" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h3 className="font-bold text-sm text-neutral-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                           {tool.title}
                         </h3>
-                        <span className="text-[10px] text-neutral-600 dark:text-neutral-400 font-mono font-medium block truncate">
+                        <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-mono font-medium block truncate">
                           {CATEGORY_NAMES[tool.category]}
                         </span>
                       </div>
                     </div>
                     {isPopular && (
-                      <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 mt-0.5">
+                      <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/25 mt-0.5">
                         Popular
                       </span>
                     )}
                   </div>
 
                   {/* One-Line Concise Description */}
-                  <p className="text-xs text-neutral-600 dark:text-neutral-300 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">
                     {tool.shortDesc}
                   </p>
                 </div>
 
                 {/* Card Footer: Badge & Action Chevron */}
                 <div className="mt-4 pt-3 border-t border-neutral-200/60 dark:border-white/5 flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border border-neutral-200/60 dark:border-white/5">
+                  <span className="text-[10px] font-mono font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 border border-neutral-200/60 dark:border-white/5">
                     {tool.badge}
                   </span>
-                  <div className="flex items-center gap-1 text-xs font-semibold text-neutral-700 dark:text-neutral-300 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                  <div className="flex items-center gap-1 text-xs font-semibold text-neutral-500 dark:text-neutral-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
                     <span>Use tool</span>
                     <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                   </div>

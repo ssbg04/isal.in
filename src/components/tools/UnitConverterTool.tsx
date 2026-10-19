@@ -261,11 +261,11 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
 
       {/* Main Dual-Panel Interactive Converter with Straddling Swap Button */}
       <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 items-stretch">
-        {/* 1. INPUT PANEL ("From") — Elevated Surface (Philippine Royal Blue Accent) */}
-        <div className="p-5 sm:p-6 rounded-2xl glass-card border border-neutral-300/90 dark:border-white/10 shadow-sm focus-within:ring-2 focus-within:ring-blue-600/40 transition-all flex flex-col justify-between">
+        {/* 1. INPUT PANEL ("From") — Elevated Clean Surface */}
+        <div className="p-5 sm:p-6 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/[0.08] shadow-sm focus-within:ring-2 focus-within:ring-amber-500/30 transition-all flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-200/70 dark:border-white/10 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              <span className="flex items-center gap-1.5 uppercase font-mono tracking-wider text-[11px] text-blue-700 dark:text-blue-400 font-bold">
+              <span className="flex items-center gap-1.5 uppercase font-mono tracking-wider text-[11px] text-neutral-600 dark:text-neutral-400 font-bold">
                 <span>Input Value ("From")</span>
               </span>
               <div className="flex items-center gap-1.5">
@@ -301,7 +301,7 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
                   onChange={(e) => setInputValue(e.target.value)}
                   placeholder="0"
                   aria-label="Value to convert"
-                  className="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-4 py-3 text-neutral-950 dark:text-white text-xl sm:text-2xl font-mono tabular-nums font-semibold outline-none focus:border-blue-600"
+                  className="w-full bg-neutral-50 dark:bg-[#0c0e15] border border-neutral-300 dark:border-white/10 rounded-xl px-4 py-3 text-neutral-950 dark:text-white text-xl sm:text-2xl font-mono tabular-nums font-semibold outline-none focus:border-amber-500 transition-colors"
                 />
               </div>
 
@@ -316,7 +316,7 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
                     setFromUnitId(e.target.value);
                     recordRecentPair(activeCategory, e.target.value, toUnitId);
                   }}
-                  className="w-full bg-neutral-50 dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3.5 py-2.5 text-neutral-900 dark:text-neutral-100 text-sm font-semibold outline-none focus:border-blue-600 cursor-pointer"
+                  className="w-full bg-neutral-50 dark:bg-[#0c0e15] border border-neutral-300 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-neutral-900 dark:text-neutral-100 text-sm font-semibold outline-none focus:border-amber-500 cursor-pointer transition-colors"
                 >
                   {units.map((u) => (
                     <option key={u.id} value={u.id}>
@@ -351,7 +351,7 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
             onClick={handleSwapUnits}
             title="Swap input and output units"
             aria-label="Swap units"
-            className="w-11 h-11 rounded-2xl bg-white dark:bg-neutral-900 hover:bg-amber-500 hover:text-neutral-950 dark:hover:bg-amber-500 dark:hover:text-neutral-950 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700 shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+            className="w-11 h-11 rounded-2xl bg-white dark:bg-[#12141c] hover:bg-amber-500 hover:text-neutral-950 dark:hover:bg-amber-500 dark:hover:text-neutral-950 text-neutral-800 dark:text-neutral-200 border border-neutral-300 dark:border-white/10 shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
           >
             <ArrowRightLeft
               className="w-5 h-5 transition-transform duration-300"
@@ -360,11 +360,11 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
           </button>
         </div>
 
-        {/* 2. OUTPUT PANEL ("To") — Philippine Golden Sun Amber Surface */}
-        <div className="p-5 sm:p-6 rounded-2xl bg-amber-500/5 dark:bg-amber-950/20 border border-amber-500/30 dark:border-amber-500/30 shadow-inner flex flex-col justify-between">
+        {/* 2. OUTPUT PANEL ("To") — Quiet Recessed Obsidian Surface + Golden Sun Target Accent */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-neutral-100/70 dark:bg-[#0c0e15] border border-neutral-200/80 dark:border-white/[0.08] shadow-inner flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-amber-500/20 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              <span className="flex items-center gap-1.5 uppercase font-mono tracking-wider text-[11px] text-amber-800 dark:text-amber-300 font-bold">
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-neutral-200/60 dark:border-white/5 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+              <span className="flex items-center gap-1.5 uppercase font-mono tracking-wider text-[11px] text-amber-700 dark:text-amber-400 font-bold">
                 <span>Converted Output ("To")</span>
               </span>
               <button
@@ -382,7 +382,7 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
               <div
                 onClick={() => directTarget && handleCopy(directTarget.formatted, 'direct')}
                 title="Click to copy result"
-                className="w-full bg-white/80 dark:bg-neutral-950/80 border border-amber-500/30 rounded-xl px-4 py-3 text-amber-700 dark:text-amber-300 text-2xl sm:text-3xl font-mono tabular-nums font-extrabold select-all flex items-center justify-between cursor-pointer hover:bg-white dark:hover:bg-neutral-950 transition"
+                className="w-full bg-white dark:bg-[#12141c] border border-amber-500/40 rounded-xl px-4 py-3 text-neutral-950 dark:text-white text-2xl sm:text-3xl font-mono tabular-nums font-extrabold select-all flex items-center justify-between cursor-pointer hover:border-amber-500 transition shadow-xs"
               >
                 <span className="truncate">{directTarget ? directTarget.formatted : '0'}</span>
                 <span className="text-sm font-sans font-bold text-amber-600 dark:text-amber-400 shrink-0 pl-2">
@@ -401,7 +401,7 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
                     setToUnitId(e.target.value);
                     recordRecentPair(activeCategory, fromUnitId, e.target.value);
                   }}
-                  className="w-full bg-white/90 dark:bg-neutral-900 border border-amber-500/30 dark:border-neutral-700 rounded-xl px-3.5 py-2.5 text-neutral-900 dark:text-neutral-100 text-sm font-semibold outline-none focus:border-amber-500 cursor-pointer"
+                  className="w-full bg-white dark:bg-[#12141c] border border-neutral-300 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-neutral-900 dark:text-neutral-100 text-sm font-semibold outline-none focus:border-amber-500 cursor-pointer transition-colors"
                 >
                   {units.map((u) => (
                     <option key={u.id} value={u.id}>
@@ -414,10 +414,10 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
           </div>
 
           {/* Equation summary */}
-          <div className="pt-4 mt-4 border-t border-amber-500/20 text-xs text-neutral-700 dark:text-neutral-300 flex items-center justify-between">
+          <div className="pt-4 mt-4 border-t border-neutral-200/60 dark:border-white/5 text-xs text-neutral-600 dark:text-neutral-400 flex items-center justify-between">
             <span className="font-mono text-[11px] truncate">
               {numValue} {fromUnitDef?.symbol} ={' '}
-              <strong className="text-amber-700 dark:text-amber-300 font-bold">{directTarget?.formatted}</strong>{' '}
+              <strong className="text-neutral-900 dark:text-white font-bold">{directTarget?.formatted}</strong>{' '}
               {directTarget?.symbol}
             </span>
             <span className="text-[10px] text-neutral-500 font-mono">1:1 Direct</span>
