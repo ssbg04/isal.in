@@ -1,32 +1,30 @@
-# React + TypeScript + Vite
+# Isal.in Multi-Converter
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A private, client-side React and TypeScript web app for converting files, data, units, and common calculations in the browser.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Quality checks
+
+```bash
+npm run lint
+npm run build
+```
+
+Conversions run locally whenever browser capabilities allow it; files are not uploaded by the application.
+
+## Google AdSense
+
+AdSense approval is required before ads can generate revenue. After approval, create a responsive display ad unit and configure these environment variables in your hosting provider (never commit them to Git):
+
+```text
+VITE_ADSENSE_CLIENT=ca-pub-XXXXXXXXXXXXXXXX
+VITE_ADSENSE_SLOT=XXXXXXXXXX
+```
+
+Add the same values to a local `.env.local` file when testing. The AdSense script is loaded globally, while ad slots render only when both values are present. Use the exact publisher and slot IDs from AdSense; do not use guessed or test IDs in production.

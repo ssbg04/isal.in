@@ -1410,7 +1410,7 @@ export function App() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090a0f] text-neutral-900 dark:text-neutral-100 flex flex-col font-sans transition-colors duration-300 relative selection:bg-amber-500/30 selection:text-amber-900 dark:selection:bg-amber-400/20 dark:selection:text-amber-200">
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans transition-colors duration-300 relative">
       {/* Skip to Main Content Link for Keyboard and Screen Reader Accessibility */}
       <a
         href="#tool-workspace"

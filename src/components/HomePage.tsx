@@ -270,9 +270,9 @@ export const HomePage: React.FC<HomePageProps> = ({
   return (
     <div className="w-full flex flex-col items-center">
       {/* 1. HERO SECTION: What is Isalin? What can it convert? Where do I start? */}
-      <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-6 sm:pt-12 pb-8 sm:pb-12 text-center flex flex-col items-center">
+      <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-10 sm:pb-14 text-center flex flex-col items-center">
         {/* Eyebrow Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-900 dark:text-amber-300 border border-amber-500/25 mb-5 shadow-xs">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border mb-5">
           <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
           <span>FREE ONLINE TOOLS</span>
           <span className="w-1 h-1 rounded-full bg-amber-500/40" />
@@ -283,7 +283,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         {/* Hero Title */}
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-neutral-950 dark:text-white max-w-4xl leading-[1.15]">
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground max-w-4xl leading-[1.1]">
           Convert files and data{' '}
           <span className="bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 dark:from-amber-400 dark:via-amber-500 dark:to-amber-600 bg-clip-text text-transparent">
             privately in your browser.
@@ -312,7 +312,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         {/* Universal Tool Search Box */}
-        <div className="mt-7 sm:mt-8 w-full max-w-2xl relative">
+        <div className="mt-8 sm:mt-10 w-full max-w-2xl relative">
           <div className="relative group shadow-lg shadow-black/5 dark:shadow-black/20 rounded-2xl">
             <Search className="w-5 h-5 text-neutral-500 dark:text-neutral-400 group-focus-within:text-amber-600 dark:group-focus-within:text-amber-400 absolute left-4.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
             <input
@@ -333,7 +333,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Search tools, formats or conversions... (e.g., webp, pdf, json to yaml)"
-              className="w-full h-14 pl-12 pr-24 rounded-2xl glass-panel border border-neutral-300 dark:border-white/10 text-sm sm:text-base text-neutral-900 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-400 outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:border-amber-500 transition-all duration-200"
+              className="w-full h-14 pl-12 pr-24 rounded-xl bg-background border border-input text-sm sm:text-base text-foreground placeholder:text-muted-foreground outline-none transition-all duration-200 shadcn-focus"
             />
             <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
               {searchQuery ? (
@@ -550,7 +550,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         {/* Compact Consistent Tool Cards Grid (Unified Monochrome Luxury + Golden Spark) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredTools.map((tool) => {
             const Icon = TOOL_ICONS[tool.id] || FileImage;
             const isPopular = POPULAR_PRESETS.some((p) => p.toolId === tool.id);
@@ -560,7 +560,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 key={tool.id}
                 onClick={() => onSelectTool(tool.id)}
                 role="link"
-                className="group relative p-4 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/[0.08] hover:border-amber-500/50 dark:hover:border-amber-500/50 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-amber-500/5 text-left flex flex-col justify-between cursor-pointer min-h-[148px] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 focus-visible:outline-none"
+                className="group relative p-4 rounded-xl glass-card hover:border-amber-500/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md text-left flex flex-col justify-between cursor-pointer min-h-[148px] shadcn-focus"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2.5 mb-3">
