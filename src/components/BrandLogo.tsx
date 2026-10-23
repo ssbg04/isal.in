@@ -112,7 +112,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
               in
             </span>
           </div>
-          <span className="text-[9px] font-mono tracking-widest uppercase text-neutral-400 dark:text-neutral-500 font-medium">
+          <span className="text-[9px] font-mono tracking-widest uppercase text-neutral-500 dark:text-neutral-400 font-medium">
             Multi-Converter
           </span>
           {showMotto && (

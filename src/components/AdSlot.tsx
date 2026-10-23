@@ -78,13 +78,13 @@ export const AdSlot: React.FC<AdSlotProps> = ({ placement, className = '' }) => 
       ) : (
         /* Secondary / fallback placeholder */
         <>
-          <span className="absolute top-2 right-2.5 text-[9px] uppercase tracking-wider text-neutral-400 dark:text-neutral-500 font-medium">
+          <span className="absolute top-2 right-2.5 text-[9px] uppercase tracking-wider text-neutral-600 dark:text-neutral-400 font-medium">
             Sponsored
           </span>
           <p className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
             {item.type}
           </p>
-          <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">
+          <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-0.5">
             {item.dimensions}
           </p>
         </>

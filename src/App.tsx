@@ -1433,7 +1433,6 @@ export function App() {
               onClick={navigateToHome}
               title="Isal.in Multi-Converter - Go to Homepage"
               className="flex items-center gap-2 cursor-pointer transition hover:opacity-90 active:scale-95 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-xl"
-              aria-label="Isal.in Multi-Converter Logo - Home"
             >
               <BrandLogo size="md" showWordmark={true} />
             </button>
@@ -1474,7 +1473,6 @@ export function App() {
             {/* Quick Command Palette Button (⌘K / Ctrl+K) */}
             <button
               onClick={() => setIsPaletteOpen(true)}
-              aria-label="Search tools and features (Ctrl+K or ⌘K)"
               aria-haspopup="dialog"
               aria-expanded={isPaletteOpen}
               className="hidden sm:inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl text-xs text-neutral-600 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white glass-panel border border-neutral-300/80 dark:border-white/10 hover:border-amber-500/50 transition cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
@@ -1501,7 +1499,6 @@ export function App() {
             {/* Desktop History & Presets Drawer Button */}
             <button
               onClick={() => setIsHistoryDrawerOpen(true)}
-              aria-label={`Open activity history (${history.length} items saved)`}
               aria-haspopup="dialog"
               aria-expanded={isHistoryDrawerOpen}
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold glass-panel border border-neutral-300/80 dark:border-white/10 hover:border-amber-500/50 text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white transition cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
@@ -1519,7 +1516,7 @@ export function App() {
             {/* Mobile History Button (matches Search and Theme Toggle) */}
             <button
               onClick={() => setIsHistoryDrawerOpen(true)}
-              aria-label={`Open activity history (${history.length} items saved)`}
+              aria-label={`Open activity history (${history.length > 9 ? '9+' : history.length} items saved)`}
               aria-haspopup="dialog"
               aria-expanded={isHistoryDrawerOpen}
               className="sm:hidden relative w-9 h-9 rounded-xl border border-neutral-300/80 dark:border-white/10 glass-panel flex items-center justify-center text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:scale-105 active:scale-95 transition cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
@@ -1537,7 +1534,6 @@ export function App() {
             {installPrompt && (
               <button
                 onClick={handleInstallApp}
-                aria-label="Install Multi-Converter application on device"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 transition shadow-sm shadow-amber-500/20 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
                 title="Install Multi-Converter on your device"
               >
@@ -1644,7 +1640,7 @@ export function App() {
                   <X className="w-3.5 h-3.5" />
                 </button>
               ) : (
-                <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-700/80 bg-neutral-100 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 font-mono">
+                <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-700/80 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-mono">
                   /
                 </kbd>
               )}
@@ -2406,7 +2402,7 @@ export function App() {
                         className="flex-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-mono text-neutral-900 dark:text-neutral-100 outline-none focus:border-neutral-900 dark:focus:border-neutral-400"
                       />
                     </div>
-                    <p className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
                       Click the color swatch to open the visual picker, or type any color code.
                     </p>
                   </div>
@@ -3822,7 +3818,6 @@ export function App() {
               onClick={navigateToHome}
               title="Isal.in Multi-Converter - Go to Homepage"
               className="cursor-pointer transition hover:opacity-90 active:scale-95 focus:outline-none"
-              aria-label="Isal.in Multi-Converter Home"
             >
               <BrandLogo size="sm" showWordmark={true} />
             </button>
@@ -3831,7 +3826,7 @@ export function App() {
               Isalin ang lahat. Convert anything.
             </span>
             <span className="hidden md:inline text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
-            <span className="hidden md:inline font-mono text-[11px] text-neutral-400 dark:text-neutral-500">
+            <span className="hidden md:inline font-mono text-[11px] text-neutral-500 dark:text-neutral-400">
               Zero-Upload Developer & Philippine Utility Suite
             </span>
           </div>
@@ -3839,7 +3834,6 @@ export function App() {
             <a
               href="mailto:crischarlesgarcia345@gmail.com?subject=Isal.in%20Suggestion%20or%20Issue%20Report&body=Hi!%20I%20have%20a%20suggestion%20or%20would%20like%20to%20report%20an%20issue%20with%20Isal.in:%0A%0A-%20Tool%20/%20Category:%0A-%20Details:%0A"
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-semibold transition cursor-pointer hover:scale-105 active:scale-95 shadow-2xs"
-              aria-label="Send suggestion or report an issue via email to crischarlesgarcia345@gmail.com"
               title="Have a suggestion or found an issue? Send us an email!"
             >
               <Mail className="w-3.5 h-3.5" aria-hidden="true" />

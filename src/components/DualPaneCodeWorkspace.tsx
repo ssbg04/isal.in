@@ -230,7 +230,7 @@ export const DualPaneCodeWorkspace: React.FC<DualPaneCodeWorkspaceProps> = ({
           </div>
 
           {/* Input Footer Metrics */}
-          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 dark:text-neutral-500 pt-1">
+          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-500 dark:text-neutral-400 pt-1">
             <span>
               {getLineCount(inputValue)} lines • {inputValue.length} chars
             </span>
@@ -296,7 +296,7 @@ export const DualPaneCodeWorkspace: React.FC<DualPaneCodeWorkspaceProps> = ({
           </div>
 
           {/* Output Footer Metrics */}
-          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 dark:text-neutral-500 pt-1">
+          <div className="flex items-center justify-between text-[11px] font-mono text-neutral-500 dark:text-neutral-400 pt-1">
             <span>
               {getLineCount(outputValue)} lines • {outputValue.length} chars
             </span>

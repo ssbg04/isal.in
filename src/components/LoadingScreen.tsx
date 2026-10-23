@@ -165,7 +165,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
               in
             </span>
           </div>
-          <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-neutral-400 dark:text-neutral-500 font-semibold mt-1">
+          <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-neutral-500 dark:text-neutral-400 font-semibold mt-1">
             MULTI-CONVERTER
           </span>
         </div>

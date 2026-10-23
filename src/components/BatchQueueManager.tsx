@@ -236,7 +236,7 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 dark:text-neutral-500 mt-0.5">
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-500 dark:text-neutral-400 mt-0.5">
                     <span>{formatBytes(file.size)}</span>
                     {isResultItem && (
                       <>

@@ -305,7 +305,6 @@ export const HomePage: React.FC<HomePageProps> = ({
               document.getElementById('explore-tools')?.scrollIntoView({ behavior: 'smooth' });
             }}
             className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-sm sm:text-base font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 shadow-md shadow-amber-500/25 hover:shadow-lg hover:shadow-amber-500/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
-            aria-label="Explore tools — View all conversion tools"
           >
             <span>Explore tools</span>
             <ArrowRight className="w-4 h-4" />
@@ -540,7 +539,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
                     isSelected
                       ? 'bg-neutral-800 text-white dark:bg-amber-600/30 dark:text-neutral-950 font-bold'
-                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 font-medium'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-medium'
                   }`}
                 >
                   {cat.count}
@@ -561,7 +560,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                 key={tool.id}
                 onClick={() => onSelectTool(tool.id)}
                 role="link"
-                aria-label={`Open ${tool.title}: ${tool.shortDesc}`}
                 className="group relative p-4 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/[0.08] hover:border-amber-500/50 dark:hover:border-amber-500/50 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-amber-500/5 text-left flex flex-col justify-between cursor-pointer min-h-[148px] focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 focus-visible:outline-none"
               >
                 <div>

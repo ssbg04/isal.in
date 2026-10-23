@@ -194,7 +194,6 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
           onClick={toggleWrap}
           type="button"
           aria-pressed={isWrapped}
-          aria-label={isWrapped ? 'Switch to compact category carousel' : 'Expand all category pills in grid view'}
           title={isWrapped ? 'Switch to compact scrollable bar' : 'Expand all categories (grid view)'}
           className="flex items-center gap-1 text-[11px] font-medium text-neutral-500 hover:text-neutral-900 dark:hover:text-white px-2 py-0.5 rounded-md hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition"
         >
@@ -248,7 +247,6 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                 key={cat.id}
                 role="tab"
                 aria-selected={isSelected}
-                aria-label={`${cat.label} category filter, ${cat.count} utilities`}
                 onClick={(e) => handlePillClick(cat.id, e)}
                 type="button"
                 className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 cursor-pointer ${
@@ -260,14 +258,14 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                 }`}
               >
                 <div className="flex items-center gap-1.5 truncate">
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-amber-400 dark:text-amber-500' : 'text-neutral-400 dark:text-neutral-500'}`} />
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-amber-400 dark:text-amber-500' : 'text-neutral-500 dark:text-neutral-400'}`} />
                   <span className="truncate">{cat.label}</span>
                 </div>
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono transition-colors shrink-0 ${
                     isSelected
                       ? 'bg-neutral-800 text-neutral-200 dark:bg-neutral-100 dark:text-neutral-900 font-bold'
-                      : 'bg-neutral-200/60 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
+                      : 'bg-neutral-200/60 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
                   }`}
                 >
                   {cat.count}
