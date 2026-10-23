@@ -124,23 +124,23 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-semibold">
               <EyeOff className="w-4 h-4 text-sky-500" />
-              <h3>2. Privacy-Respecting Advertising (EthicalAds)</h3>
+              <h3>2. Privacy-Respecting Advertising (Google AdSense)</h3>
             </div>
             <p className="text-neutral-600 dark:text-neutral-300">
-              To keep all conversion tools free and maintain fast serverless infrastructure, we partner with <strong>EthicalAds</strong>:
+              To keep all conversion tools free and support the platform, we partner with <strong>Google AdSense</strong>:
             </p>
             <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/50 p-3.5 space-y-2 text-xs">
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>No Tracking Cookies:</strong> EthicalAds does not place third-party cookies or track you across the web.</span>
+                <span><strong>No Tracking Cookies:</strong> Google AdSense does not place third‑party cookies for tracking across the web.</span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>Contextual Only:</strong> Ads are selected purely based on page context (developer and digital media tools) and coarse geographic region (e.g., country level), never your personal behavioral history.</span>
+                <span><strong>Contextual Only:</strong> Ads are selected based on page content and coarse geographic region, not personal behavior.</span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>No Invasive Scripts:</strong> EthicalAds respects "Do Not Track" browser signals and complies strictly with GDPR, CCPA, and Acceptable Ads standards.</span>
+                <span><strong>No Invasive Scripts:</strong> Google AdSense respects "Do Not Track" signals and complies with GDPR/CCPA requirements.</span>
               </div>
             </div>
           </div>

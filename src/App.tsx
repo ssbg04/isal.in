@@ -3840,11 +3840,6 @@ export function App() {
               <span>Suggestions / Issues</span>
             </a>
             <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
-            <span className="inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-400 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
-              Ethical Ads • No Tracking
-            </span>
-            <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
             <button
               onClick={() => setIsPrivacyOpen(true)}
               className="text-neutral-700 dark:text-neutral-300 hover:text-amber-500 dark:hover:text-amber-400 font-medium transition cursor-pointer"
