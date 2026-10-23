@@ -284,9 +284,9 @@ export const HomePage: React.FC<HomePageProps> = ({
 
         {/* Hero Title */}
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-neutral-950 dark:text-white max-w-4xl leading-[1.15]">
-          Convert files and data in{' '}
+          Convert files and data{' '}
           <span className="bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 dark:from-amber-400 dark:via-amber-500 dark:to-amber-600 bg-clip-text text-transparent">
-            one simple place.
+            privately in your browser.
           </span>
         </h1>
 
@@ -296,8 +296,24 @@ export const HomePage: React.FC<HomePageProps> = ({
           Processed entirely on your device with <strong>zero server uploads</strong>.
         </p>
 
+        {/* Prominent Call-to-Action Button */}
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <a
+            href="#explore-tools"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('explore-tools')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-sm sm:text-base font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 shadow-md shadow-amber-500/25 hover:shadow-lg hover:shadow-amber-500/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
+            aria-label="Explore tools — View all conversion tools"
+          >
+            <span>Explore tools</span>
+            <ArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+
         {/* Universal Tool Search Box */}
-        <div className="mt-8 sm:mt-10 w-full max-w-2xl relative">
+        <div className="mt-7 sm:mt-8 w-full max-w-2xl relative">
           <div className="relative group shadow-lg shadow-black/5 dark:shadow-black/20 rounded-2xl">
             <Search className="w-5 h-5 text-neutral-500 dark:text-neutral-400 group-focus-within:text-amber-600 dark:group-focus-within:text-amber-400 absolute left-4.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
             <input
