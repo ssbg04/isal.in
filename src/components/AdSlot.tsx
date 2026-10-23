@@ -34,9 +34,11 @@ export const AdSlot: React.FC<AdSlotProps> = ({ placement, className = '' }) => 
       }
     };
 
-    if (document.querySelector('script[data-adsense-loader]')) {
+    const scriptExists = !!document.querySelector('script[src*="adsbygoogle.js"]');
+    if (scriptExists) {
       pushAd();
     } else {
+      // Wait a short moment for the AdSense script to load, then try again
       window.setTimeout(pushAd, 250);
     }
   }, [canRenderAd]);
