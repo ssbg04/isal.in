@@ -1,9 +1,11 @@
-const CACHE_NAME = 'mc-cache-v6';
+const CACHE_NAME = 'mc-cache-v7';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/favicon.svg',
+  '/icon-192.png',
+  '/icon-512.png',
 ];
 
 // Domains that should NEVER be cached or block offline usage (e.g. ad networks)
