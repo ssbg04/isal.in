@@ -26,10 +26,18 @@ export const AdSlot: React.FC<AdSlotProps> = ({ placement, className = '' }) => 
 
   useEffect(() => {
     if (!canRenderAd || !adRef.current || typeof window === 'undefined') return;
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch {
-      // Ad blockers and unapproved accounts can prevent the ad request.
+    const pushAd = () => {
+      try {
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      } catch {
+        return;
+      }
+    };
+
+    if (document.querySelector('script[data-adsense-loader]')) {
+      pushAd();
+    } else {
+      window.setTimeout(pushAd, 250);
     }
   }, [canRenderAd]);
 

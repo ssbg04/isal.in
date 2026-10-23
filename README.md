@@ -27,4 +27,4 @@ VITE_ADSENSE_CLIENT=ca-pub-XXXXXXXXXXXXXXXX
 VITE_ADSENSE_SLOT=XXXXXXXXXX
 ```
 
-Add the same values to a local `.env.local` file when testing. The AdSense script is loaded globally, while ad slots render only when both values are present. Use the exact publisher and slot IDs from AdSense; do not use guessed or test IDs in production.
+Add the same values to a local `.env.local` file when testing. For Vercel, open **Project Settings → Environment Variables**, add both variables for **Production**, **Preview**, and **Development** as needed, then redeploy. Because these are `VITE_` variables, Vite injects them at build time; changing them requires a new deployment. The AdSense script and ad slots render only when both values are present. Use the exact publisher and slot IDs from AdSense; do not use guessed or test IDs in production.
