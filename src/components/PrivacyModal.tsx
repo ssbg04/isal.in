@@ -114,9 +114,9 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
               All conversions—including image manipulation, PDF generation, JSON/YAML parsing, Base64 encoding, and UUID generation—run <strong>entirely inside your browser's local sandbox</strong>.
             </p>
             <ul className="space-y-1.5 pl-6 list-disc text-neutral-600 dark:text-neutral-400 text-xs">
-              <li>Your files and text inputs are never uploaded to our servers or third-party cloud storage.</li>
+              <li>Your files and text inputs are processed locally and are never uploaded to our servers or third-party cloud storage.</li>
               <li>Calculations utilize HTML5 Canvas, <code className="text-neutral-800 dark:text-neutral-200">crypto.randomUUID()</code>, and in-memory Web APIs.</li>
-              <li>Data is automatically discarded from browser memory as soon as you clear the input or refresh the page.</li>
+              <li>Active file memory is automatically cleared when you clear your inputs or leave the tool.</li>
             </ul>
           </div>
 
@@ -124,23 +124,41 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-semibold">
               <EyeOff className="w-4 h-4 text-sky-500" />
-              <h3>2. Privacy-Respecting Advertising (Google AdSense)</h3>
+              <h3>2. Advertising & Third-Party Partners (Google AdSense)</h3>
             </div>
             <p className="text-neutral-600 dark:text-neutral-300">
-              To keep all conversion tools free and support the platform, we partner with <strong>Google AdSense</strong>:
+              To keep all conversion tools and Philippine calculators 100% free, we partner with <strong>Google AdSense</strong> to display advertisements:
             </p>
-            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/50 p-3.5 space-y-2 text-xs">
+            <div className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950/50 p-3.5 space-y-2.5 text-xs">
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>No Tracking Cookies:</strong> Google AdSense does not place third‑party cookies for tracking across the web.</span>
+                <span><strong>Advertising Cookies:</strong> Google and its ad partners use cookies or unique device identifiers to serve and personalize ads based on a user's prior visits to this and other websites.</span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>Contextual Only:</strong> Ads are selected based on page content and coarse geographic region, not personal behavior.</span>
+                <span><strong>User Choice & Opt-Out:</strong> You can opt out of personalized advertising at any time by visiting{' '}
+                  <a
+                    href="https://adssettings.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:text-amber-500"
+                  >
+                    Google Ads Settings
+                  </a>{' '}
+                  or{' '}
+                  <a
+                    href="https://www.aboutads.info/choices"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:text-amber-500"
+                  >
+                    aboutads.info
+                  </a>.
+                </span>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>No Invasive Scripts:</strong> Google AdSense respects "Do Not Track" signals and complies with GDPR/CCPA requirements.</span>
+                <span><strong>Non-Intrusive Layout:</strong> Ad banners are configured in designated non-blocking slots and will not interfere with tool execution.</span>
               </div>
             </div>
           </div>
@@ -149,10 +167,13 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-semibold">
               <Server className="w-4 h-4 text-indigo-500" />
-              <h3>3. Hosting & Server Infrastructure</h3>
+              <h3>3. Infrastructure & Analytics</h3>
             </div>
             <p className="text-neutral-600 dark:text-neutral-300 text-xs">
-              This site is hosted globally via Vercel's Edge Network. When your browser requests static assets (HTML, CSS, JS), temporary standard server access logs (such as IP address, user-agent, and timestamp) are processed exclusively for security, rate-limiting, and DDoS defense. No analytics tracking pixels (such as Google Analytics or Facebook Pixel) are present.
+              This site is hosted globally via Vercel's Edge Network. Standard temporary access logs (IP address, user-agent, timestamp) are recorded for security, DDoS protection, and rate-limiting.
+            </p>
+            <p className="text-neutral-600 dark:text-neutral-300 text-xs">
+              We also use <strong>Vercel Web Analytics</strong> to monitor aggregated performance and page views. Vercel Web Analytics is privacy-friendly, does not use tracking cookies, does not track individual user identities across the web, and does not sell your data. We do not use third-party tracking pixels (such as Meta Pixel).
             </p>
           </div>
 
@@ -160,10 +181,18 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-semibold">
               <Shield className="w-4 h-4 text-amber-500" />
-              <h3>4. Local Storage Usage</h3>
+              <h3>4. Local Storage Usage & Data Control</h3>
             </div>
             <p className="text-neutral-600 dark:text-neutral-300 text-xs">
-              We only use your browser's <code className="text-neutral-800 dark:text-neutral-200">localStorage</code> to remember your interface preferences (such as dark mode vs light mode). This information never leaves your device.
+              We use your browser's <code className="text-neutral-800 dark:text-neutral-200">localStorage</code> exclusively on your device to enhance your experience:
+            </p>
+            <ul className="space-y-1 pl-6 list-disc text-neutral-600 dark:text-neutral-400 text-xs">
+              <li><strong>Interface Preferences:</strong> Preserving your theme choice (dark or light mode) and category layout.</li>
+              <li><strong>Local Conversion History:</strong> Storing up to 20 recent transformations locally so you can review or restore previous results without recalculating.</li>
+              <li><strong>Unit Pairs:</strong> Remembering recently used unit pairs for faster conversion.</li>
+            </ul>
+            <p className="text-neutral-600 dark:text-neutral-300 text-xs">
+              <strong>How to clear:</strong> This data never leaves your device and is never uploaded to any server. You can clear your conversion history at any time by clicking <em>"Clear History"</em> in the Activity History drawer, or by clearing your browser's site data/cookies.
             </p>
           </div>
 

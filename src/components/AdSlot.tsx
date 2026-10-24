@@ -26,6 +26,18 @@ export const AdSlot: React.FC<AdSlotProps> = ({ placement, className = '' }) => 
 
   useEffect(() => {
     if (!canRenderAd || !adRef.current || typeof window === 'undefined') return;
+
+    const SCRIPT_ID = 'google-adsense-script';
+    let script = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    if (!script) {
+      script = document.createElement('script');
+      script.id = SCRIPT_ID;
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CONFIG.googleClient}`;
+      script.async = true;
+      script.crossOrigin = 'anonymous';
+      document.head.appendChild(script);
+    }
+
     const pushAd = () => {
       try {
         (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -34,12 +46,11 @@ export const AdSlot: React.FC<AdSlotProps> = ({ placement, className = '' }) => 
       }
     };
 
-    const scriptExists = !!document.querySelector('script[src*="adsbygoogle.js"]');
-    if (scriptExists) {
+    if (window.adsbygoogle) {
       pushAd();
     } else {
-      // Wait a short moment for the AdSense script to load, then try again
-      window.setTimeout(pushAd, 250);
+      script.addEventListener('load', pushAd, { once: true });
+      window.setTimeout(pushAd, 300);
     }
   }, [canRenderAd]);
 
