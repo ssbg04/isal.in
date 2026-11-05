@@ -205,7 +205,7 @@ export const PrivacyModal: React.FC<PrivacyModalProps> = ({ isOpen, onClose }) =
             <p className="text-neutral-600 dark:text-neutral-300 text-xs">
               Have a suggestion for a new Philippine calculator or developer converter? Encountered an issue? Reach out directly via email at{' '}
               <a
-                href="mailto:crischarlesgarcia345@gmail.com?subject=Isal.in%20Inquiry%20or%20Suggestion"
+                href="mailto:crischarlesgarcia345@gmail.com?subject=Isalin%20Inquiry%20or%20Suggestion"
                 className="text-amber-600 dark:text-amber-400 font-semibold underline underline-offset-2 hover:text-amber-500"
               >
                 crischarlesgarcia345@gmail.com

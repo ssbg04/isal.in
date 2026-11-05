@@ -1,6 +1,6 @@
 {
-  "name": "Multi-Converter — Client-Side Utilities",
-  "short_name": "Multi-Converter",
+  "name": "Isalin Multi-Converter",
+  "short_name": "Isalin",
   "description": "Fast, 100% private in-browser conversions for Images, PDFs, JSON, YAML, Base64, and UUIDs. Zero server uploads.",
   "start_url": "/",
   "id": "/",

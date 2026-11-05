@@ -34,12 +34,12 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         role="img"
-        aria-label="Isal.in Multi-Converter Logo"
+        aria-label="Isalin Multi-Converter Logo"
         className={`shrink-0 drop-shadow-xs transition-transform duration-200 hover:scale-105 ${
           isSpinning ? 'animate-[isal-spin-smooth_2.8s_linear_infinite]' : ''
         }`}
       >
-        <title>Isal.in Multi-Converter</title>
+        <title>Isalin Multi-Converter</title>
         <defs>
           <clipPath id="bl_disc">
             <circle r="128" />

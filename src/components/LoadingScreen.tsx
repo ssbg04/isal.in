@@ -36,7 +36,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
     <div
       role="status"
       aria-live="polite"
-      aria-label="Loading Isal.in Multi-Converter"
+      aria-label="Loading Isalin Multi-Converter"
       className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center select-none bg-[#fafafa] dark:bg-[#0c0e14] transition-all duration-500 ease-out ${
         isFadingOut
           ? 'opacity-0 scale-105 blur-xs pointer-events-none'
@@ -82,7 +82,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             </defs>
           </svg>
 
-          {/* The Spinning Isal.in Logo (Continuous smooth 360-degree rotation) */}
+          {/* The Spinning Isalin Logo (Continuous smooth 360-degree rotation) */}
           <div className="relative z-10 w-20 h-20 flex items-center justify-center">
             <svg
               className="w-full h-full drop-shadow-[0_8px_20px_rgba(245,184,0,0.4)] animate-[isal-spin-smooth_2.8s_linear_infinite]"
@@ -90,7 +90,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
               role="img"
-              aria-label="Isal.in Spinning Logo"
+              aria-label="Isalin Spinning Logo"
             >
               <defs>
                 <clipPath id="ls_disc">

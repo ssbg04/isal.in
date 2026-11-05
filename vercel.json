@@ -1,29 +1,44 @@
 {
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Strict-Transport-Security",
-          "value": "max-age=31536000; includeSubDomains"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        },
-        {
-          "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=()"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://ep2.adtrafficquality.google https://va.vercel-scripts.com blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; connect-src 'self' https: blob: data:; frame-src 'self' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://ep2.adtrafficquality.google; worker-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'self';"
-        }
-      ]
-    }
-  ]
+    "headers":  [
+                    {
+                        "source":  "/(.*)",
+                        "headers":  [
+                                        {
+                                            "key":  "Strict-Transport-Security",
+                                            "value":  "max-age=31536000; includeSubDomains"
+                                        },
+                                        {
+                                            "key":  "X-Frame-Options",
+                                            "value":  "DENY"
+                                        },
+                                        {
+                                            "key":  "Referrer-Policy",
+                                            "value":  "strict-origin-when-cross-origin"
+                                        },
+                                        {
+                                            "key":  "Permissions-Policy",
+                                            "value":  "camera=(), microphone=(), geolocation=()"
+                                        },
+                                        {
+                                            "key":  "Content-Security-Policy",
+                                            "value":  "default-src \u0027self\u0027; script-src \u0027self\u0027 \u0027unsafe-inline\u0027 \u0027unsafe-eval\u0027 https://pagead2.googlesyndication.com https://googleads.g.doubleclick.net https://ep2.adtrafficquality.google https://va.vercel-scripts.com blob:; style-src \u0027self\u0027 \u0027unsafe-inline\u0027 https://fonts.googleapis.com; font-src \u0027self\u0027 https://fonts.gstatic.com data:; img-src \u0027self\u0027 data: blob: https:; media-src \u0027self\u0027 data: blob: https:; connect-src \u0027self\u0027 https: blob: data:; frame-src \u0027self\u0027 https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com https://ep2.adtrafficquality.google; worker-src \u0027self\u0027 blob:; object-src \u0027none\u0027; frame-ancestors \u0027none\u0027; base-uri \u0027self\u0027;"
+                                        }
+                                    ]
+                    }
+                ],
+    "redirects":  [
+                      {
+                          "destination":  "https://isalin.us.ci/:path",
+                          "permanent":  true,
+                          "source":  "/:path(.*)",
+                          "has":  [
+                                      {
+                                          "value":  "isal-in.vercel.app",
+                                          "type":  "host"
+                                      }
+                                  ]
+                      }
+                  ],
+    "cleanUrls":  true,
+    "trailingSlash":  false
 }

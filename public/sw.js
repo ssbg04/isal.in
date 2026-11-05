@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mc-cache-v7';
+const CACHE_NAME = 'isalin-cache-v8';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -59,7 +59,7 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          return caches.match('/index.html').then((cached) => cached || caches.match('/'));
+          return caches.match(request).then((hit) => hit || caches.match('/index.html')).then((cached) => cached || caches.match('/'));
         })
     );
     return;

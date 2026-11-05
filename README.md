@@ -1,6 +1,8 @@
-# Isal.in Multi-Converter
+# Isalin Multi-Converter
 
 A private, client-side React and TypeScript web app for converting files, data, units, and common calculations in the browser.
+
+Live at https://isalin.us.ci (the Vercel domain isal-in.vercel.app permanently redirects there).
 
 ## Development
 
@@ -28,3 +30,7 @@ VITE_ADSENSE_SLOT=XXXXXXXXXX
 ```
 
 Add the same values to a local `.env.local` file when testing. For Vercel, open **Project Settings → Environment Variables**, add both variables for **Production**, **Preview**, and **Development** as needed, then redeploy. Because these are `VITE_` variables, Vite injects them at build time; changing them requires a new deployment. The AdSense script and ad slots render only when both values are present. Use the exact publisher and slot IDs from AdSense; do not use guessed or test IDs in production.
+
+## Routing & SEO
+
+Each tool has a clean URL (`/income-tax-ph`, `/image-convert`, ...). The tool registry lives in `src/config/tools.ts`. On build, `build/seoPages.ts` emits one HTML page per tool with unique title/description/canonical, plus `sitemap.xml` and `robots.txt`. Legacy `/#tool-id` links auto-migrate to `/tool-id`.

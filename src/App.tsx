@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import {
   FileImage,
   FileText,
@@ -63,15 +63,15 @@ import {
   type PresetWorkflow,
 } from './components/HistoryPresetsDrawer';
 import { BatchQueueManager } from './components/BatchQueueManager';
-import { UnitConverterTool } from './components/tools/UnitConverterTool';
-import { NumberSystemConverter } from './components/tools/NumberSystemConverter';
-import { PhilippineTaxCalculator } from './components/tools/PhilippineTaxCalculator';
-import { MortgageCalculator } from './components/tools/MortgageCalculator';
-import { ElectricityCalculator } from './components/tools/ElectricityCalculator';
-import { BmiCalculator } from './components/tools/BmiCalculator';
-import { PhilippineGwaCalculator } from './components/tools/PhilippineGwaCalculator';
-import { AudioConverterTool } from './components/tools/AudioConverterTool';
-import { VideoConverterTool } from './components/tools/VideoConverterTool';
+const UnitConverterTool = lazy(() => import('./components/tools/UnitConverterTool').then((m) => ({ default: m.UnitConverterTool })));
+const NumberSystemConverter = lazy(() => import('./components/tools/NumberSystemConverter').then((m) => ({ default: m.NumberSystemConverter })));
+const PhilippineTaxCalculator = lazy(() => import('./components/tools/PhilippineTaxCalculator').then((m) => ({ default: m.PhilippineTaxCalculator })));
+const MortgageCalculator = lazy(() => import('./components/tools/MortgageCalculator').then((m) => ({ default: m.MortgageCalculator })));
+const ElectricityCalculator = lazy(() => import('./components/tools/ElectricityCalculator').then((m) => ({ default: m.ElectricityCalculator })));
+const BmiCalculator = lazy(() => import('./components/tools/BmiCalculator').then((m) => ({ default: m.BmiCalculator })));
+const PhilippineGwaCalculator = lazy(() => import('./components/tools/PhilippineGwaCalculator').then((m) => ({ default: m.PhilippineGwaCalculator })));
+const AudioConverterTool = lazy(() => import('./components/tools/AudioConverterTool').then((m) => ({ default: m.AudioConverterTool })));
+const VideoConverterTool = lazy(() => import('./components/tools/VideoConverterTool').then((m) => ({ default: m.VideoConverterTool })));
 import type { SupportedImageFormat } from './services/imageFormatsService';
 import type {
   ToolType,
@@ -102,217 +102,39 @@ import {
   parseTimestampOrDate,
 } from './services/conversionService';
 import { APP_LIMITS } from './config/limits';
-
-type Category = 'media' | 'developer' | 'security' | 'units' | 'calculators';
-
-interface ToolMeta {
-  id: ToolType;
-  title: string;
-  category: Category;
-  shortDesc: string;
-  badge: string;
-}
-
-const TOOLS: ToolMeta[] = [
-  {
-    id: 'image-convert',
-    title: 'Image Converter & Resizer',
-    category: 'media',
-    shortDesc: 'WebP, PNG, JPG, AVIF, BMP, ICO with compression & dimensions',
-    badge: 'Media',
-  },
-  {
-    id: 'images-to-pdf',
-    title: 'Images to PDF Document',
-    category: 'media',
-    shortDesc: 'Bundle multiple pictures into a single organized PDF',
-    badge: 'Media',
-  },
-  {
-    id: 'audio-convert',
-    title: 'Audio Converter & Extractor',
-    category: 'media',
-    shortDesc: 'MP3, WAV, WebM, OGG with volume boost, trimming & video extraction',
-    badge: 'Audio',
-  },
-  {
-    id: 'video-convert',
-    title: 'Video Converter & Transcoder',
-    category: 'media',
-    shortDesc: 'MP4, WebM transcoding, resolution scaling, muting & frame snapshots',
-    badge: 'Video',
-  },
-  {
-    id: 'json-yaml',
-    title: 'JSON ⇄ YAML Transformer',
-    category: 'developer',
-    shortDesc: 'Bi-directional serialization parsing and syntax formatting',
-    badge: 'Data',
-  },
-  {
-    id: 'base64',
-    title: 'Base64 Encoder / Decoder',
-    category: 'security',
-    shortDesc: 'Safely encode binary or text representations',
-    badge: 'Encoding',
-  },
-  {
-    id: 'url-encode',
-    title: 'URL Percent Encoder',
-    category: 'developer',
-    shortDesc: 'Query param escaping & URI string decoding',
-    badge: 'Web',
-  },
-  {
-    id: 'uuid',
-    title: 'UUID v4 Identifier Generator',
-    category: 'developer',
-    shortDesc: 'Cryptographically secure standard random tokens',
-    badge: 'Crypto',
-  },
-  {
-    id: 'color-convert',
-    title: 'Color Format Converter',
-    category: 'developer',
-    shortDesc: 'Instant bidirectional HEX, RGB, HSL, and CMYK with visual color picker',
-    badge: 'Design',
-  },
-  {
-    id: 'markdown-html',
-    title: 'Markdown ⇄ HTML Live Editor',
-    category: 'developer',
-    shortDesc: 'Live bidirectional Markdown and rendered HTML with syntax formatting',
-    badge: 'Text',
-  },
-  {
-    id: 'csv-json',
-    title: 'CSV ⇄ JSON & Data Table',
-    category: 'developer',
-    shortDesc: 'Parse CSV/TSV spreadsheets into JSON arrays with interactive data table & delimiter choices',
-    badge: 'Data',
-  },
-  {
-    id: 'hash-calc',
-    title: 'Cryptographic Hash & Checksum',
-    category: 'security',
-    shortDesc: 'Compute SHA-256, SHA-512, MD5, and verify file or text integrity checksums',
-    badge: 'Crypto',
-  },
-  {
-    id: 'unit-convert',
-    title: 'CSS & Dev Unit Converter',
-    category: 'developer',
-    shortDesc: 'CSS px ⇄ rem typography, byte storage scaling, and Unix epoch timestamp decoder',
-    badge: 'Utility',
-  },
-  // Measurement & Unit Converters
-  {
-    id: 'length-convert',
-    title: 'Length & Distance Converter',
-    category: 'units',
-    shortDesc: 'Meters, kilometers, centimeters, feet, inches, yards, and nautical miles',
-    badge: 'Units',
-  },
-  {
-    id: 'mass-convert',
-    title: 'Mass & Weight Converter',
-    category: 'units',
-    shortDesc: 'Kilograms, grams, pounds (lbs), ounces, stones, and metric tons',
-    badge: 'Units',
-  },
-  {
-    id: 'area-convert',
-    title: 'Area & Land Converter',
-    category: 'units',
-    shortDesc: 'Square meters, hectares, acres, square feet, and square kilometers',
-    badge: 'Units',
-  },
-  {
-    id: 'volume-convert',
-    title: 'Volume & Capacity Converter',
-    category: 'units',
-    shortDesc: 'Liters, milliliters, US/Imperial gallons, cups, tablespoons, and cubic meters',
-    badge: 'Units',
-  },
-  {
-    id: 'temperature-convert',
-    title: 'Temperature Converter',
-    category: 'units',
-    shortDesc: 'Celsius, Fahrenheit, Kelvin, and Rankine thermal scales',
-    badge: 'Physics',
-  },
-  {
-    id: 'speed-convert',
-    title: 'Speed & Velocity Converter',
-    category: 'units',
-    shortDesc: 'km/h, mph, m/s, knots, ft/s, and Mach speed calculations',
-    badge: 'Physics',
-  },
-  {
-    id: 'time-convert',
-    title: 'Time & Duration Converter',
-    category: 'units',
-    shortDesc: 'Seconds, minutes, hours, days, weeks, months, and years',
-    badge: 'Time',
-  },
-  {
-    id: 'number-system',
-    title: 'Numerical System & Radix',
-    category: 'units',
-    shortDesc: 'Decimal, Binary nibbles, Hexadecimal, Octal, ASCII, and Roman numerals',
-    badge: 'Math',
-  },
-  // Everyday & Philippine Calculators
-  {
-    id: 'income-tax-ph',
-    title: 'Philippine Income Tax & Salary',
-    category: 'calculators',
-    shortDesc: 'TRAIN Law 2023+ revised brackets, SSS, PhilHealth, Pag-IBIG & take-home pay',
-    badge: 'PH Tax',
-  },
-  {
-    id: 'mortgage-calc',
-    title: 'Mortgage & Loan Calculator',
-    category: 'calculators',
-    shortDesc: 'Pag-IBIG & bank housing loans, monthly amortization and payment schedule',
-    badge: 'Finance',
-  },
-  {
-    id: 'electricity-calc',
-    title: 'Electricity & Sub-Meter Splitter',
-    category: 'calculators',
-    shortDesc: 'Apartment/tenant sub-meter bill calculation, effective kWh rate, & appliance costs',
-    badge: 'Utility',
-  },
-  {
-    id: 'bmi-calc',
-    title: 'BMI & Body Health Calculator',
-    category: 'calculators',
-    shortDesc: 'Metric & Imperial Body Mass Index with Asian/WHO thresholds and ideal weight',
-    badge: 'Health',
-  },
-  {
-    id: 'gwa-calc',
-    title: 'Philippine GPA / GWA Calculator',
-    category: 'calculators',
-    shortDesc: 'General Weighted Average (1.00–5.00), units weighting, and Latin Honors standings',
-    badge: 'PH College',
-  },
-];
-
-const CATEGORIES: { id: Category; label: string; count: number }[] = [
-  { id: 'media', label: 'Media & Documents', count: 4 },
-  { id: 'developer', label: 'Data & Formats', count: 7 },
-  { id: 'security', label: 'Encoding & Security', count: 2 },
-  { id: 'units', label: 'Units & Measurements', count: 8 },
-  { id: 'calculators', label: 'Calculators & PH', count: 5 },
-];
+import { TOOLS, CATEGORIES, SITE_URL, isToolId, type Category } from './config/tools';
 
 const getToolCategoryColor = (_category: Category, isSelected: boolean) => {
   if (isSelected) {
     return 'bg-amber-500 text-neutral-950 font-bold shadow-sm shadow-amber-500/20';
   }
   return 'glass-panel text-neutral-700 dark:text-neutral-300 border border-neutral-300/80 dark:border-white/10 hover:border-amber-500/40 hover:text-neutral-950 dark:hover:text-white';
+};
+
+const ToolLoadingFallback = () => (
+  <div role="status" aria-live="polite" className="glass-panel rounded-2xl p-8 text-center text-sm text-neutral-500 animate-pulse">
+    Loading tool…
+  </div>
+);
+
+/**
+ * Resolve tool from path (`/image-convert`). Legacy `#image-convert` hash links
+ * are migrated to clean path URLs via replaceState.
+ */
+function getToolFromLocation(): ToolType | null {
+  if (typeof window === 'undefined') return null;
+  const slug = window.location.pathname.replace(/^\/+|\/+$/g, '');
+  if (isToolId(slug)) return slug;
+  const hash = window.location.hash.replace('#', '').split('?')[0];
+  if (isToolId(hash)) {
+    window.history.replaceState(null, '', `/${hash}`);
+    return hash;
+  }
+  return null;
+}
+
+const updateMeta = (selector: string, attr: string, value: string) => {
+  document.querySelector(selector)?.setAttribute(attr, value);
 };
 
 export function App() {
@@ -328,26 +150,10 @@ export function App() {
 
   // Selected tool & category filter (initialized from URL hash if present)
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
-  const [activeTool, setActiveTool] = useState<ToolType>(() => {
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const hash = window.location.hash.replace('#', '').split('?')[0] as ToolType;
-      if (TOOLS.some((t) => t.id === hash)) {
-        return hash;
-      }
-    }
-    return 'image-convert';
-  });
+  const [activeTool, setActiveTool] = useState<ToolType>(() => getToolFromLocation() ?? 'image-convert');
 
   // Current view mode: 'home' for dedicated discovery landing, 'tool' for converter workspace
-  const [viewMode, setViewMode] = useState<'home' | 'tool'>(() => {
-    if (typeof window !== 'undefined' && window.location.hash) {
-      const hash = window.location.hash.replace('#', '').split('?')[0] as ToolType;
-      if (TOOLS.some((t) => t.id === hash)) {
-        return 'tool';
-      }
-    }
-    return 'home';
-  });
+  const [viewMode, setViewMode] = useState<'home' | 'tool'>(() => (getToolFromLocation() ? 'tool' : 'home'));
 
   // File state
   const [files, setFiles] = useState<File[]>([]);
@@ -471,7 +277,7 @@ export function App() {
   // Sync activeTool with URL hash, document title, and SEO meta tags
   useEffect(() => {
     if (viewMode === 'home') {
-      document.title = 'Isal.in Multi-Converter — Convert files and data in one place | Isalin ang lahat. Convert anything.';
+      document.title = 'Isalin Multi-Converter — Convert files and data in one place | Isalin ang lahat. Convert anything.';
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
         metaDesc.setAttribute(
@@ -479,11 +285,10 @@ export function App() {
           'Free, 100% private in-browser utility suite. Convert images, documents, text, code, physical units, and Philippine financial calculators with zero server uploads.'
         );
       }
-      if (typeof window !== 'undefined' && window.location.hash && window.location.hash !== '#' && window.location.hash !== '#explore-tools') {
-        window.history.replaceState(null, '', window.location.pathname);
-      }
+      updateMeta('link[rel="canonical"]', 'href', `${SITE_URL}/`);
+      updateMeta('meta[property="og:url"]', 'content', `${SITE_URL}/`);
     } else if (currentToolMeta) {
-      document.title = `${currentToolMeta.title} — Isal.in: Isalin ang lahat. Convert anything.`;
+      document.title = `${currentToolMeta.title} — Isalin: Isalin ang lahat. Convert anything.`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) {
         metaDesc.setAttribute(
@@ -491,8 +296,10 @@ export function App() {
           `${currentToolMeta.title}: ${currentToolMeta.shortDesc}. Isalin ang lahat. Convert anything — 100% private in-browser utility suite.`
         );
       }
-      if (typeof window !== 'undefined' && window.location.hash !== `#${activeTool}`) {
-        window.history.replaceState(null, '', `#${activeTool}`);
+      updateMeta('link[rel="canonical"]', 'href', `${SITE_URL}/${activeTool}`);
+      updateMeta('meta[property="og:url"]', 'content', `${SITE_URL}/${activeTool}`);
+      if (window.location.pathname !== `/${activeTool}`) {
+        window.history.replaceState(null, '', `/${activeTool}`);
       }
     }
     const favLink = document.querySelector<HTMLLinkElement>("link[rel*='icon']");
@@ -503,20 +310,17 @@ export function App() {
 
   // Listen to browser Back / Forward navigation
   useEffect(() => {
-    const onHashChange = () => {
-      const rawHash = window.location.hash.replace('#', '');
-      if (!rawHash || rawHash === 'home' || rawHash === 'explore-tools') {
-        setViewMode('home');
-        return;
-      }
-      const hash = rawHash.split('?')[0] as ToolType;
-      if (TOOLS.some((t) => t.id === hash)) {
-        setActiveTool(hash);
+    const onPopState = () => {
+      const tool = getToolFromLocation();
+      if (tool) {
+        setActiveTool(tool);
         setViewMode('tool');
+      } else {
+        setViewMode('home');
       }
     };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   // Listen to Online/Offline connectivity and PWA install prompt
@@ -556,7 +360,7 @@ export function App() {
   };
 
   const handleShareTool = () => {
-    const url = `${window.location.origin}${window.location.pathname}#${activeTool}`;
+    const url = `${window.location.origin}/${activeTool}`;
     navigator.clipboard.writeText(url);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
@@ -620,7 +424,7 @@ export function App() {
   const navigateToHome = useCallback(() => {
     setViewMode('home');
     if (typeof window !== 'undefined') {
-      window.history.pushState(null, '', window.location.pathname);
+      if (window.location.pathname !== '/') window.history.pushState(null, '', '/');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, []);
@@ -646,7 +450,7 @@ export function App() {
       handleToolSelect(toolId);
       setViewMode('tool');
       if (typeof window !== 'undefined') {
-        window.location.hash = `#${toolId}`;
+        if (window.location.pathname !== `/${toolId}`) window.history.pushState(null, '', `/${toolId}`);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
@@ -671,7 +475,7 @@ export function App() {
       handleToolSelect(toolId);
       setViewMode('tool');
       if (typeof window !== 'undefined') {
-        window.location.hash = `#${toolId}`;
+        if (window.location.pathname !== `/${toolId}`) window.history.pushState(null, '', `/${toolId}`);
       }
       if (initialInput) {
         setTextInput(initialInput);
@@ -968,7 +772,7 @@ export function App() {
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 36px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Isal.in Multi-Converter', 400, 320);
+      ctx.fillText('Isalin Multi-Converter', 400, 320);
 
       ctx.fillStyle = '#94a3b8';
       ctx.font = '500 18px sans-serif';
@@ -1431,7 +1235,7 @@ export function App() {
             <button
               type="button"
               onClick={navigateToHome}
-              title="Isal.in Multi-Converter - Go to Homepage"
+              title="Isalin Multi-Converter - Go to Homepage"
               className="flex items-center gap-2 cursor-pointer transition hover:opacity-90 active:scale-95 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-xl"
             >
               <BrandLogo size="md" showWordmark={true} />
@@ -3677,7 +3481,7 @@ export function App() {
               activeTool === 'speed-convert' ||
               activeTool === 'time-convert') && (
               <div className="space-y-6">
-                <UnitConverterTool
+                <Suspense fallback={<ToolLoadingFallback />}><UnitConverterTool
                   key={activeTool}
                   initialCategory={
                     activeTool === 'length-convert'
@@ -3708,7 +3512,7 @@ export function App() {
                       handleToolSelect(toolMap[cat]);
                     }
                   }}
-                />
+                /></Suspense>
                 <AdSlot placement="post-conversion" />
               </div>
             )}
@@ -3716,7 +3520,7 @@ export function App() {
             {/* 2.13 Numerical System & Radix Converter */}
             {activeTool === 'number-system' && (
               <div className="space-y-6">
-                <NumberSystemConverter />
+                <Suspense fallback={<ToolLoadingFallback />}><NumberSystemConverter /></Suspense>
                 <AdSlot placement="post-conversion" />
               </div>
             )}
@@ -3724,7 +3528,7 @@ export function App() {
             {/* 2.14 Philippine Income Tax Calculator (TRAIN Law) */}
             {activeTool === 'income-tax-ph' && (
               <div className="space-y-6">
-                <PhilippineTaxCalculator />
+                <Suspense fallback={<ToolLoadingFallback />}><PhilippineTaxCalculator /></Suspense>
                 <AdSlot placement="post-conversion" />
               </div>
             )}
@@ -3732,7 +3536,7 @@ export function App() {
             {/* 2.15 Mortgage & Loan Amortization Calculator */}
             {activeTool === 'mortgage-calc' && (
               <div className="space-y-6">
-                <MortgageCalculator />
+                <Suspense fallback={<ToolLoadingFallback />}><MortgageCalculator /></Suspense>
                 <AdSlot placement="post-conversion" />
               </div>
             )}
@@ -3740,7 +3544,7 @@ export function App() {
             {/* 2.16 Electricity & Sub-meter Splitter */}
             {activeTool === 'electricity-calc' && (
               <div className="space-y-6">
-                <ElectricityCalculator />
+                <Suspense fallback={<ToolLoadingFallback />}><ElectricityCalculator /></Suspense>
                 <AdSlot placement="post-conversion" />
               </div>
             )}
@@ -3748,7 +3552,7 @@ export function App() {
             {/* 2.17 BMI & Body Health Calculator */}
             {activeTool === 'bmi-calc' && (
               <div className="space-y-6">
-                <BmiCalculator />
+                <Suspense fallback={<ToolLoadingFallback />}><BmiCalculator /></Suspense>
                 <AdSlot placement="post-conversion" />
               </div>
             )}
@@ -3756,7 +3560,7 @@ export function App() {
             {/* 2.18 Philippine GPA / GWA College Grade Calculator */}
             {activeTool === 'gwa-calc' && (
               <div className="space-y-6">
-                <PhilippineGwaCalculator />
+                <Suspense fallback={<ToolLoadingFallback />}><PhilippineGwaCalculator /></Suspense>
                 <AdSlot placement="post-conversion" />
               </div>
             )}
@@ -3764,7 +3568,7 @@ export function App() {
             {/* 2.19 Audio Converter & Extractor */}
             {activeTool === 'audio-convert' && (
               <div className="space-y-6">
-                <AudioConverterTool />
+                <Suspense fallback={<ToolLoadingFallback />}><AudioConverterTool /></Suspense>
                 <AdSlot placement="post-conversion" />
               </div>
             )}
@@ -3772,7 +3576,7 @@ export function App() {
             {/* 2.20 Video Converter & Transcoder */}
             {activeTool === 'video-convert' && (
               <div className="space-y-6">
-                <VideoConverterTool />
+                <Suspense fallback={<ToolLoadingFallback />}><VideoConverterTool /></Suspense>
                 <AdSlot placement="post-conversion" />
               </div>
             )}
@@ -3816,7 +3620,7 @@ export function App() {
             <button
               type="button"
               onClick={navigateToHome}
-              title="Isal.in Multi-Converter - Go to Homepage"
+              title="Isalin Multi-Converter - Go to Homepage"
               className="cursor-pointer transition hover:opacity-90 active:scale-95 focus:outline-none"
             >
               <BrandLogo size="sm" showWordmark={true} />
@@ -3832,7 +3636,7 @@ export function App() {
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <a
-              href="mailto:crischarlesgarcia345@gmail.com?subject=Isal.in%20Suggestion%20or%20Issue%20Report&body=Hi!%20I%20have%20a%20suggestion%20or%20would%20like%20to%20report%20an%20issue%20with%20Isal.in:%0A%0A-%20Tool%20/%20Category:%0A-%20Details:%0A"
+              href="mailto:crischarlesgarcia345@gmail.com?subject=Isalin%20Suggestion%20or%20Issue%20Report&body=Hi!%20I%20have%20a%20suggestion%20or%20would%20like%20to%20report%20an%20issue%20with%20Isalin:%0A%0A-%20Tool%20/%20Category:%0A-%20Details:%0A"
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-semibold transition cursor-pointer hover:scale-105 active:scale-95 shadow-2xs"
               title="Have a suggestion or found an issue? Send us an email!"
             >

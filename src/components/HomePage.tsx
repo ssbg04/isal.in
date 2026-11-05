@@ -671,7 +671,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               Offline Capable PWA
             </h3>
             <p className="text-xs text-neutral-700 dark:text-neutral-300 leading-relaxed">
-              Install Isal.in as a desktop or mobile application. Once loaded, all converters and utilities remain completely functional without an active internet connection.
+              Install Isalin as a desktop or mobile application. Once loaded, all converters and utilities remain completely functional without an active internet connection.
             </p>
           </div>
         </div>

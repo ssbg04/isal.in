@@ -1,30 +1,4 @@
-export type ToolType = 
-  | 'image-convert'
-  | 'images-to-pdf'
-  | 'audio-convert'
-  | 'video-convert'
-  | 'json-yaml'
-  | 'base64'
-  | 'url-encode'
-  | 'uuid'
-  | 'color-convert'
-  | 'markdown-html'
-  | 'csv-json'
-  | 'hash-calc'
-  | 'unit-convert'
-  | 'length-convert'
-  | 'mass-convert'
-  | 'area-convert'
-  | 'volume-convert'
-  | 'temperature-convert'
-  | 'speed-convert'
-  | 'time-convert'
-  | 'number-system'
-  | 'income-tax-ph'
-  | 'mortgage-calc'
-  | 'electricity-calc'
-  | 'bmi-calc'
-  | 'gwa-calc';
+export type { ToolType } from '../config/tools';
 
 import { canvasToBmpBlob, canvasToIcoBlob, type SupportedImageFormat } from './imageFormatsService';
 
