@@ -37,6 +37,8 @@ import {
   Flame,
   Copy,
   Check,
+  Upload,
+  Sun,
 } from 'lucide-react';
 import type { ToolType } from '../services/conversionService';
 import { parseNaturalLanguageConversion } from '../services/naturalLanguageService';
@@ -71,6 +73,8 @@ const POPULAR_PRESETS: PopularPreset[] = [
   { label: 'SHA-256 Hash', toolId: 'hash-calc', description: 'File & text checksums' },
 ];
 
+const QUICK_MATH_EXAMPLES = ['100 km to miles', '24px to rem', '70 kg to lbs', '500 MB to GB'];
+
 const CATEGORY_NAMES: Record<Category, string> = {
   media: 'Image & Media',
   developer: 'Text & Data',
@@ -79,6 +83,49 @@ const CATEGORY_NAMES: Record<Category, string> = {
   calculators: 'Calculators & Finance',
 };
 
+const CATEGORY_ICON_STYLES: Record<Category, string> = {
+  media: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 group-hover:bg-amber-500/20 group-hover:border-amber-500/40',
+  developer: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 group-hover:bg-sky-500/20 group-hover:border-sky-500/40',
+  security: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 group-hover:bg-emerald-500/20 group-hover:border-emerald-500/40',
+  units: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20 group-hover:bg-violet-500/20 group-hover:border-violet-500/40',
+  calculators: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 group-hover:bg-rose-500/20 group-hover:border-rose-500/40',
+};
+
+const TOOL_FORMAT_PILLS: Record<ToolType, string> = {
+  'image-convert': 'WEBP • AVIF • PNG • JPG',
+  'images-to-pdf': 'JPG / PNG → PDF',
+  'audio-convert': 'MP3 • WAV • OGG • TRIM',
+  'video-convert': 'MP4 • WEBM • SCALE',
+  'json-yaml': 'JSON ⇄ YAML',
+  'base64': 'TEXT / FILE ⇄ B64',
+  'url-encode': 'URI • QUERY PARAMS',
+  'uuid': 'RFC 4122 v4 • BATCH',
+  'color-convert': 'HEX • RGB • HSL • CMYK',
+  'markdown-html': 'MD ⇄ HTML PREVIEW',
+  'csv-json': 'CSV / TSV ⇄ JSON GRID',
+  'hash-calc': 'SHA-256 • SHA-512 • MD5',
+  'unit-convert': 'PX ⇄ REM • BYTES • EPOCH',
+  'length-convert': 'M • KM • FT • IN • MI',
+  'mass-convert': 'KG • G • LBS • OZ',
+  'area-convert': 'SQM • HA • ACRE • SQFT',
+  'volume-convert': 'L • ML • GAL • CUPS',
+  'temperature-convert': '°C • °F • KELVIN',
+  'speed-convert': 'KM/H • MPH • KNOTS',
+  'time-convert': 'SEC • MIN • HR • DAYS',
+  'number-system': 'BIN • HEX • DEC • ROMAN',
+  'income-tax-ph': 'TRAIN 2023+ • SSS • BIR',
+  'mortgage-calc': 'PAG-IBIG • BANK AMORT',
+  'electricity-calc': 'MERALCO • SUB-METER kWh',
+  'bmi-calc': 'WHO & ASIAN CUTOFFS',
+  'gwa-calc': '1.00–5.00 • LATIN HONORS',
+};
+
+const PH_SPOTLIGHT_IDS: ToolType[] = [
+  'income-tax-ph',
+  'gwa-calc',
+  'electricity-calc',
+  'mortgage-calc',
+];
 
 const TOOL_ICONS: Record<ToolType, React.ComponentType<{ className?: string }>> = {
   'image-convert': FileImage,
@@ -141,27 +188,65 @@ const TOOL_TAGS: Record<ToolType, string[]> = {
 interface HomePageProps {
   tools: ToolMeta[];
   onSelectTool: (toolId: ToolType, preset?: { targetFormat?: string; mode?: string }) => void;
+  onDropFiles?: (files: File[]) => void;
   onOpenPrivacy: () => void;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
   tools,
   onSelectTool,
+  onDropFiles,
   onOpenPrivacy,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [copiedQuick, setCopiedQuick] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownListRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const quickConversion = useMemo(() => parseNaturalLanguageConversion(searchQuery), [searchQuery]);
+
+  const phTools = useMemo(
+    () => PH_SPOTLIGHT_IDS.map((id) => tools.find((t) => t.id === id)).filter((t): t is ToolMeta => Boolean(t)),
+    [tools]
+  );
 
   const handleCopyQuick = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedQuick(true);
     setTimeout(() => setCopiedQuick(false), 2000);
+  };
+
+  const handleCardLinkClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    toolId: ToolType,
+    preset?: { targetFormat?: string; mode?: string }
+  ) => {
+    // Allow Ctrl/Cmd/Shift/Middle click to open in a new tab naturally
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    onSelectTool(toolId, preset);
+  };
+
+  const handleDropZoneFiles = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const arr = Array.from(fileList);
+    if (onDropFiles) {
+      onDropFiles(arr);
+      return;
+    }
+    const first = arr[0];
+    const name = first.name.toLowerCase();
+    if (first.type.startsWith('image/')) onSelectTool('image-convert');
+    else if (first.type.startsWith('audio/')) onSelectTool('audio-convert');
+    else if (first.type.startsWith('video/')) onSelectTool('video-convert');
+    else if (name.endsWith('.csv') || name.endsWith('.tsv')) onSelectTool('csv-json');
+    else if (name.endsWith('.json') || name.endsWith('.yaml') || name.endsWith('.yml')) onSelectTool('json-yaml');
+    else if (name.endsWith('.md') || name.endsWith('.html')) onSelectTool('markdown-html');
+    else onSelectTool('hash-calc');
   };
 
   // Global '/' keyboard shortcut to focus search input
@@ -268,17 +353,47 @@ export const HomePage: React.FC<HomePageProps> = ({
   }, [tools]);
 
   return (
-    <div className="w-full flex flex-col items-center">
-      {/* 1. HERO SECTION: What is Isalin? What can it convert? Where do I start? */}
-      <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-10 sm:pb-14 text-center flex flex-col items-center">
+    <div
+      className="w-full flex flex-col items-center"
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (!isDraggingOver) setIsDraggingOver(true);
+      }}
+      onDragLeave={(e) => {
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+        setIsDraggingOver(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDraggingOver(false);
+        handleDropZoneFiles(e.dataTransfer.files);
+      }}
+    >
+      {/* Full-window drag overlay */}
+      {isDraggingOver && (
+        <div className="fixed inset-0 z-50 bg-neutral-950/75 backdrop-blur-md flex items-center justify-center p-6 pointer-events-none">
+          <div className="max-w-md w-full rounded-3xl border-2 border-dashed border-amber-400 bg-amber-500/10 p-10 text-center space-y-3 shadow-2xl">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500 text-neutral-950 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/30">
+              <Upload className="w-7 h-7" />
+            </div>
+            <div className="text-lg font-extrabold text-white">Drop file to open the right converter</div>
+            <p className="text-xs text-neutral-300">
+              Images, audio, video, CSV, JSON, YAML, or Markdown — processed 100% locally in your browser.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 1. HERO SECTION: Streamlined Search + Instant Math + Quick File Drop */}
+      <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 pt-8 sm:pt-14 pb-8 sm:pb-10 text-center flex flex-col items-center">
         {/* Eyebrow Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border mb-5">
+        <div className="inline-flex flex-wrap items-center justify-center gap-2 px-3.5 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground border border-border mb-5">
           <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-          <span>FREE ONLINE TOOLS</span>
+          <span className="font-bold tracking-wide text-amber-700 dark:text-amber-400">ISALIN ANG LAHAT</span>
           <span className="w-1 h-1 rounded-full bg-amber-500/40" />
           <span className="text-emerald-800 dark:text-emerald-400 font-medium flex items-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            100% Client-Side Privacy
+            100% Local Browser Processing
           </span>
         </div>
 
@@ -291,29 +406,13 @@ export const HomePage: React.FC<HomePageProps> = ({
         </h1>
 
         {/* Hero Subtitle */}
-        <p className="mt-4 sm:mt-5 text-base sm:text-lg text-neutral-700 dark:text-neutral-300 max-w-2xl leading-relaxed">
-          Images, documents, text, and developer utilities — all in one streamlined workspace.
-          Processed entirely on your device with <strong>zero server uploads</strong>.
+        <p className="mt-3 sm:mt-4 text-sm sm:text-base text-neutral-700 dark:text-neutral-300 max-w-2xl leading-relaxed">
+          Images, audio, video, developer formats, unit measurements, and Philippine everyday calculators — <strong>zero server uploads</strong>.
         </p>
 
-        {/* Prominent Call-to-Action Button */}
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <a
-            href="#explore-tools"
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById('explore-tools')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-sm sm:text-base font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 shadow-md shadow-amber-500/25 hover:shadow-lg hover:shadow-amber-500/35 hover:-translate-y-0.5 active:translate-y-0 active:scale-98 transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"
-          >
-            <span>Explore tools</span>
-            <ArrowRight className="w-4 h-4" />
-          </a>
-        </div>
-
-        {/* Universal Tool Search Box */}
-        <div className="mt-8 sm:mt-10 w-full max-w-2xl relative">
-          <div className="relative group shadow-lg shadow-black/5 dark:shadow-black/20 rounded-2xl">
+        {/* Primary Action: Universal Tool & Instant Conversion Search Box */}
+        <div className="mt-6 sm:mt-8 w-full max-w-2xl relative">
+          <div className="relative group shadow-xl shadow-black/5 dark:shadow-black/30 rounded-2xl">
             <Search className="w-5 h-5 text-neutral-500 dark:text-neutral-400 group-focus-within:text-amber-600 dark:group-focus-within:text-amber-400 absolute left-4.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" />
             <input
               ref={searchInputRef}
@@ -328,14 +427,14 @@ export const HomePage: React.FC<HomePageProps> = ({
                   ? `home-search-option-${filteredTools[highlightedIndex].id}`
                   : undefined
               }
-              aria-label="Universal tool and format search"
+              aria-label="Universal tool and instant conversion search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
-              placeholder="Search tools, formats or conversions... (e.g., webp, pdf, json to yaml)"
-              className="w-full h-14 pl-12 pr-24 rounded-xl bg-background border border-input text-sm sm:text-base text-foreground placeholder:text-muted-foreground outline-none transition-all duration-200 shadcn-focus"
+              placeholder='Search tools or type a conversion (e.g. "100 km to miles", "24px to rem", "webp")'
+              className="w-full h-14 sm:h-15 pl-12 pr-28 rounded-2xl bg-background border-2 border-neutral-300/90 dark:border-white/15 focus:border-amber-500 dark:focus:border-amber-400 text-sm sm:text-base text-foreground placeholder:text-muted-foreground outline-none transition-all duration-200 shadow-inner"
             />
-            <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
               {searchQuery ? (
                 <button
                   onClick={() => {
@@ -348,12 +447,48 @@ export const HomePage: React.FC<HomePageProps> = ({
                   <X className="w-4 h-4" />
                 </button>
               ) : (
-                <div className="hidden sm:flex items-center gap-1 text-[11px] font-mono px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
-                  <span>Press</span>
-                  <kbd className="font-semibold text-neutral-800 dark:text-neutral-200">/</kbd>
-                </div>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Pick a file (image, video, audio, CSV, JSON) to auto-open its converter"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/30 transition cursor-pointer"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span className="hidden xs:inline">Drop file</span>
+                  </button>
+                  <div className="hidden sm:flex items-center gap-1 text-[11px] font-mono px-2 py-1 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200 dark:border-neutral-700">
+                    <kbd className="font-semibold text-neutral-800 dark:text-neutral-200">/</kbd>
+                  </div>
+                </>
               )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                aria-label="Quick file picker for automatic tool selection"
+                onChange={(e) => handleDropZoneFiles(e.target.files)}
+              />
             </div>
+          </div>
+
+          {/* Instant Math / Conversion Hint Chips */}
+          <div className="mt-2.5 flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-neutral-500 dark:text-neutral-400">
+            <span className="font-medium">Try instant math:</span>
+            {QUICK_MATH_EXAMPLES.map((expr) => (
+              <button
+                key={expr}
+                type="button"
+                onClick={() => {
+                  setSearchQuery(expr);
+                  searchInputRef.current?.focus();
+                }}
+                className="font-mono px-2 py-0.5 rounded-md bg-neutral-100/90 dark:bg-neutral-800/70 hover:bg-amber-500/15 hover:text-amber-700 dark:hover:text-amber-300 text-neutral-700 dark:text-neutral-300 border border-neutral-200/70 dark:border-white/5 transition cursor-pointer"
+              >
+                {expr}
+              </button>
+            ))}
           </div>
 
           {/* Instant Search Results Dropdown Preview (When Typing) */}
@@ -397,17 +532,17 @@ export const HomePage: React.FC<HomePageProps> = ({
                       {copiedQuick ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                       <span>{copiedQuick ? 'Copied!' : 'Copy Result'}</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onSelectTool(quickConversion.toolId);
+                    <a
+                      href={`/${quickConversion.toolId}`}
+                      onClick={(e) => {
+                        handleCardLinkClick(e, quickConversion.toolId);
                         setSearchQuery('');
                       }}
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg glass-panel border border-neutral-300 dark:border-white/10 text-neutral-800 dark:text-neutral-200 hover:text-amber-700 dark:hover:text-amber-300 font-semibold text-[11px] transition cursor-pointer"
                     >
                       <span>Open Tool</span>
                       <ArrowRight className="w-3 h-3" />
-                    </button>
+                    </a>
                   </div>
                 </div>
               )}
@@ -422,15 +557,16 @@ export const HomePage: React.FC<HomePageProps> = ({
                     const Icon = TOOL_ICONS[t.id] || FileImage;
                     const isHighlighted = idx === highlightedIndex;
                     return (
-                      <button
+                      <a
                         key={t.id}
+                        href={`/${t.id}`}
                         id={`home-search-option-${t.id}`}
                         role="option"
                         aria-selected={isHighlighted}
                         data-index={idx}
                         onMouseEnter={() => setHighlightedIndex(idx)}
-                        onClick={() => {
-                          onSelectTool(t.id);
+                        onClick={(e) => {
+                          handleCardLinkClick(e, t.id);
                           setSearchQuery('');
                           setHighlightedIndex(-1);
                         }}
@@ -441,7 +577,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${CATEGORY_ICON_STYLES[t.category]}`}>
                             <Icon className="w-4 h-4" />
                           </div>
                           <div className="min-w-0">
@@ -459,7 +595,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                           </span>
                           <ArrowRight className={`w-3.5 h-3.5 transition ${isHighlighted ? 'text-amber-600 dark:text-amber-400 translate-x-0.5' : 'text-neutral-400'}`} />
                         </div>
-                      </button>
+                      </a>
                     );
                   })}
                 </div>
@@ -469,16 +605,17 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         {/* Popular Quick Conversion Tags */}
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-xs text-neutral-700 dark:text-neutral-300">
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-neutral-700 dark:text-neutral-300">
           <span className="font-semibold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5">
             <Flame className="w-3.5 h-3.5 text-amber-500" />
             Popular:
           </span>
           {POPULAR_PRESETS.map((preset) => (
-            <button
+            <a
               key={preset.label}
-              onClick={() =>
-                onSelectTool(preset.toolId, {
+              href={`/${preset.toolId}`}
+              onClick={(e) =>
+                handleCardLinkClick(e, preset.toolId, {
                   targetFormat: preset.targetFormat,
                   mode: preset.mode,
                 })
@@ -487,30 +624,76 @@ export const HomePage: React.FC<HomePageProps> = ({
               title={preset.description}
             >
               <span>{preset.label}</span>
-            </button>
+            </a>
           ))}
         </div>
       </section>
 
-      {/* 2. SPONSOR BANNER (Subtle & Below Hero - Away From Action) */}
-      <section className="w-full max-w-4xl px-4 py-2" aria-label="Sponsor Banner">
-        <AdSlot placement="header" />
+      {/* 2. PARA SA PINOY SPOTLIGHT: Differentiated Everyday PH Calculators */}
+      <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-2 pb-6" aria-label="Featured Philippine Calculators">
+        <div className="rounded-2xl p-4 sm:p-5 glass-card border border-amber-500/25 bg-gradient-to-br from-amber-500/[0.06] via-transparent to-rose-500/[0.04]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3.5">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                <Sun className="w-3.5 h-3.5" />
+              </span>
+              <h2 className="text-sm sm:text-base font-extrabold text-neutral-950 dark:text-white tracking-tight">
+                Para sa Pinoy — Everyday Philippine Calculators
+              </h2>
+              <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+                PH Built-in
+              </span>
+            </div>
+            <p className="text-xs text-neutral-600 dark:text-neutral-400">
+              Updated for TRAIN Law, SSS/PhilHealth/Pag-IBIG, Meralco sub-meters & college GWA.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {phTools.map((tool) => {
+              const Icon = TOOL_ICONS[tool.id] || Coins;
+              return (
+                <a
+                  key={tool.id}
+                  href={`/${tool.id}`}
+                  onClick={(e) => handleCardLinkClick(e, tool.id)}
+                  className="group p-3.5 rounded-xl bg-background/80 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-white/10 hover:border-amber-500/60 transition-all hover:-translate-y-0.5 hover:shadow-md flex items-start gap-3 text-left shadcn-focus"
+                >
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 group-hover:scale-105 transition-transform">
+                    <Icon className="w-4.5 h-4.5" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <h3 className="font-bold text-xs sm:text-sm text-neutral-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                        {tool.title}
+                      </h3>
+                      <ChevronRight className="w-3.5 h-3.5 shrink-0 text-neutral-400 group-hover:text-amber-500 group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                    <p className="text-[11px] text-neutral-600 dark:text-neutral-400 line-clamp-1 mt-0.5">
+                      {tool.shortDesc}
+                    </p>
+                    <span className="inline-block mt-1.5 text-[9px] font-mono font-semibold text-amber-700 dark:text-amber-400/90">
+                      {TOOL_FORMAT_PILLS[tool.id]}
+                    </span>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
-      {/* 3. EXPLORE TOOLS SECTION: Category Tabs & Compact Consistent Cards */}
-      <section id="explore-tools" className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 sm:mb-8 border-b border-neutral-200 dark:border-neutral-800 pb-5">
+      {/* 3. EXPLORE TOOLS SECTION: Category Tabs & Color-Coded Semantic Cards */}
+      <section id="explore-tools" className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-5 sm:mb-6 border-b border-neutral-200 dark:border-neutral-800 pb-4">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider mb-1">
               <Layers className="w-4 h-4" />
-              <span>Tool Catalog</span>
+              <span>Complete Suite</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-950 dark:text-white">
-              Explore tools
+              All {tools.length} browser tools
             </h2>
-            <p className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 mt-1">
-              Choose from {tools.length} secure, client-side utilities. No installation or registration needed.
-            </p>
           </div>
 
           {/* Quick Result Counter */}
@@ -520,8 +703,8 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
         </div>
 
-        {/* Category Filter Pills (Monochrome Foundation + Golden Sun Active Accent) */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
+        {/* Category Filter Pills (Wraps cleanly on mobile so no categories are hidden off-screen) */}
+        <div className="flex flex-wrap items-center gap-2 mb-6">
           {categories.map((cat) => {
             const isSelected = selectedCategory === cat.id;
             return (
@@ -549,23 +732,24 @@ export const HomePage: React.FC<HomePageProps> = ({
           })}
         </div>
 
-        {/* Compact Consistent Tool Cards Grid (Unified Monochrome Luxury + Golden Spark) */}
+        {/* Semantic <a> Tool Cards Grid with Category Tints & Concrete Format Pills */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredTools.map((tool) => {
             const Icon = TOOL_ICONS[tool.id] || FileImage;
             const isPopular = POPULAR_PRESETS.some((p) => p.toolId === tool.id);
+            const iconStyle = CATEGORY_ICON_STYLES[tool.category];
 
             return (
-              <button
+              <a
                 key={tool.id}
-                onClick={() => onSelectTool(tool.id)}
-                role="link"
+                href={`/${tool.id}`}
+                onClick={(e) => handleCardLinkClick(e, tool.id)}
                 className="group relative p-4 rounded-xl glass-card hover:border-amber-500/60 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md text-left flex flex-col justify-between cursor-pointer min-h-[148px] shadcn-focus"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2.5 mb-3">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 border border-neutral-200/80 dark:border-white/5 transition-all duration-200 group-hover:scale-105 group-hover:text-amber-500 dark:group-hover:text-amber-400 group-hover:bg-amber-500/10 group-hover:border-amber-500/30">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-200 group-hover:scale-105 ${iconStyle}`}>
                         <Icon className="w-5 h-5" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -584,23 +768,23 @@ export const HomePage: React.FC<HomePageProps> = ({
                     )}
                   </div>
 
-                  {/* One-Line Concise Description */}
+                  {/* Concise Description */}
                   <p className="text-xs text-neutral-600 dark:text-neutral-400 line-clamp-2 leading-relaxed">
                     {tool.shortDesc}
                   </p>
                 </div>
 
-                {/* Card Footer: Badge & Action Chevron */}
-                <div className="mt-4 pt-3 border-t border-neutral-200/60 dark:border-white/5 flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 border border-neutral-200/60 dark:border-white/5">
-                    {tool.badge}
+                {/* Card Footer: Concrete Format Specs & Action Chevron */}
+                <div className="mt-4 pt-3 border-t border-neutral-200/60 dark:border-white/5 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono font-medium uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800/80 text-neutral-600 dark:text-neutral-400 border border-neutral-200/60 dark:border-white/5 truncate">
+                    {TOOL_FORMAT_PILLS[tool.id] || tool.badge}
                   </span>
-                  <div className="flex items-center gap-1 text-xs font-semibold text-neutral-500 dark:text-neutral-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                    <span>Use tool</span>
+                  <div className="flex items-center gap-1 text-xs font-semibold text-neutral-500 dark:text-neutral-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors shrink-0">
+                    <span>Open</span>
                     <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </div>
-              </button>
+              </a>
             );
           })}
         </div>
@@ -627,7 +811,12 @@ export const HomePage: React.FC<HomePageProps> = ({
         )}
       </section>
 
-      {/* 4. VALUE PILLARS: What is Isalin? Privacy & Architecture */}
+      {/* 4. SPONSOR BANNER (Placed below tool catalog so primary content comes first) */}
+      <section className="w-full max-w-4xl px-4 py-2" aria-label="Sponsor Banner">
+        <AdSlot placement="header" />
+      </section>
+
+      {/* 5. VALUE PILLARS: What is Isalin? Privacy & Architecture */}
       <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16 border-t border-neutral-200 dark:border-neutral-800">
         <div className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-950 dark:text-white">

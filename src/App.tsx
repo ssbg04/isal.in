@@ -1399,6 +1399,42 @@ export function App() {
           <HomePage
             tools={TOOLS}
             onSelectTool={navigateToTool}
+            onDropFiles={(droppedFiles) => {
+              const first = droppedFiles[0];
+              if (!first) return;
+              const name = first.name.toLowerCase();
+              if (first.type.startsWith('image/')) {
+                navigateToTool('image-convert');
+                validateAndSetFiles(droppedFiles);
+              } else if (first.type.startsWith('audio/')) {
+                navigateToTool('audio-convert');
+              } else if (first.type.startsWith('video/')) {
+                navigateToTool('video-convert');
+              } else if (name.endsWith('.csv') || name.endsWith('.tsv')) {
+                navigateToTool('csv-json');
+                first.text().then((txt) => {
+                  setTextInput(txt);
+                  const parsed = parseCsv(txt, ',', true);
+                  setCsvParsedResult(parsed);
+                  setTextOutput(JSON.stringify(parsed.rows, null, csvIndentation));
+                });
+              } else if (name.endsWith('.json') || name.endsWith('.yaml') || name.endsWith('.yml')) {
+                const mode = name.endsWith('.json') ? 'json-to-yaml' : 'yaml-to-json';
+                navigateToTool('json-yaml', { mode });
+                first.text().then((txt) => {
+                  setTextInput(txt);
+                  convertJsonYaml(txt, mode).then(setTextOutput).catch(() => {});
+                });
+              } else if (name.endsWith('.md') || name.endsWith('.html')) {
+                navigateToTool('markdown-html');
+                first.text().then((txt) => {
+                  setTextInput(txt);
+                  setTextOutput(name.endsWith('.md') ? markdownToHtml(txt) : htmlToMarkdown(txt));
+                });
+              } else {
+                navigateToTool('hash-calc');
+              }
+            }}
             onOpenPrivacy={() => setIsPrivacyOpen(true)}
           />
         </main>
