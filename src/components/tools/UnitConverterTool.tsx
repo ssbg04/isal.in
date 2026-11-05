@@ -81,6 +81,13 @@ const COMMON_PAIRS: Record<UnitCategory, { label: string; from: string; to: stri
   ],
 };
 
+const getHashParams = () => {
+  if (typeof window === 'undefined' || !window.location.hash) return null;
+  const hashParts = window.location.hash.split('?');
+  if (hashParts.length <= 1) return null;
+  return new URLSearchParams(hashParts[1]);
+};
+
 interface UnitConverterToolProps {
   initialCategory?: UnitCategory;
   onCategoryChange?: (category: UnitCategory) => void;
@@ -91,16 +98,33 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
   onCategoryChange,
 }) => {
   const [activeCategory, setActiveCategory] = useState<UnitCategory>(initialCategory);
-  const [inputValue, setInputValue] = useState<string>('1');
+  const [inputValue, setInputValue] = useState<string>(() => {
+    const params = getHashParams();
+    return params?.get('v') || '1';
+  });
   const [fromUnitId, setFromUnitId] = useState<string>(() => {
     const list = CATEGORY_UNIT_MAP[initialCategory] || [];
+    const params = getHashParams();
+    const fromParam = params?.get('from');
+    if (fromParam && list.some((u) => u.id === fromParam)) return fromParam;
     return list[0]?.id || '';
   });
   const [toUnitId, setToUnitId] = useState<string>(() => {
     const list = CATEGORY_UNIT_MAP[initialCategory] || [];
+    const params = getHashParams();
+    const toParam = params?.get('to');
+    if (toParam && list.some((u) => u.id === toParam)) return toParam;
     return list[1]?.id || list[0]?.id || '';
   });
-  const [precision, setPrecision] = useState<number>(4);
+  const [precision, setPrecision] = useState<number>(() => {
+    const params = getHashParams();
+    const pParam = params?.get('p');
+    if (pParam) {
+      const pNum = parseInt(pParam, 10);
+      if ([2, 4, 6].includes(pNum)) return pNum;
+    }
+    return 4;
+  });
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isSwapping, setIsSwapping] = useState<boolean>(false);
   const [showCompareAll, setShowCompareAll] = useState<boolean>(true);
@@ -114,34 +138,6 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
   });
 
   const units = useMemo(() => CATEGORY_UNIT_MAP[activeCategory] || [], [activeCategory]);
-
-  // Hydrate state from URL query parameters (e.g. #length-convert?from=m&to=ft&v=10)
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.location.hash) return;
-    const hashParts = window.location.hash.split('?');
-    if (hashParts.length > 1) {
-      const searchParams = new URLSearchParams(hashParts[1]);
-      const fromParam = searchParams.get('from');
-      const toParam = searchParams.get('to');
-      const vParam = searchParams.get('v');
-      const pParam = searchParams.get('p');
-
-      const currentUnits = CATEGORY_UNIT_MAP[activeCategory] || [];
-      if (fromParam && currentUnits.some((u) => u.id === fromParam)) {
-        setFromUnitId(fromParam);
-      }
-      if (toParam && currentUnits.some((u) => u.id === toParam)) {
-        setToUnitId(toParam);
-      }
-      if (vParam) {
-        setInputValue(vParam);
-      }
-      if (pParam) {
-        const pNum = parseInt(pParam, 10);
-        if ([2, 4, 6].includes(pNum)) setPrecision(pNum);
-      }
-    }
-  }, [activeCategory]);
 
   // Sync state to URL hash
   useEffect(() => {
@@ -477,7 +473,9 @@ export const UnitConverterTool: React.FC<UnitConverterToolProps> = ({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    directTarget && handleCopy(directTarget.formatted, 'direct');
+                    if (directTarget) {
+                      handleCopy(directTarget.formatted, 'direct');
+                    }
                   }
                 }}
                 className="group/readout w-full bg-white dark:bg-[#12141a] border border-amber-500/40 hover:border-amber-500 rounded-xl px-4 py-3.5 text-neutral-950 dark:text-white text-2xl sm:text-3xl font-mono tabular-nums font-extrabold select-all flex items-center justify-between cursor-pointer transition shadow-xs relative focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none"

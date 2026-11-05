@@ -73,10 +73,17 @@ export const SearchableUnitSelect: React.FC<SearchableUnitSelectProps> = ({
   }, [isOpen]);
 
   // Auto focus input on open and reset highlight
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setSearchQuery('');
       setHighlightedIndex(0);
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen) {
       setTimeout(() => {
         searchInputRef.current?.focus();
       }, 50);

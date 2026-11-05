@@ -15,20 +15,27 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
 }) => {
   const [shouldRender, setShouldRender] = useState(isVisible);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [prevVisible, setPrevVisible] = useState(isVisible);
 
-  useEffect(() => {
+  if (isVisible !== prevVisible) {
+    setPrevVisible(isVisible);
     if (isVisible) {
       setShouldRender(true);
       setIsFadingOut(false);
     } else {
       setIsFadingOut(true);
+    }
+  }
+
+  useEffect(() => {
+    if (!isVisible && shouldRender) {
       const timer = setTimeout(() => {
         setShouldRender(false);
         if (onFinished) onFinished();
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [isVisible, onFinished]);
+  }, [isVisible, shouldRender, onFinished]);
 
   if (!shouldRender) return null;
 

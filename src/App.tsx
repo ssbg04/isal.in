@@ -636,19 +636,6 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (e.dataTransfer.files?.length) {
-      validateAndSetFiles(Array.from(e.dataTransfer.files));
-    }
-  };
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.length) {
-      validateAndSetFiles(Array.from(e.target.files));
-    }
-  };
-
   const validateAndSetFiles = useCallback((incoming: File[]) => {
     setErrorMsg(null);
     setResult(null);
@@ -682,6 +669,19 @@ export function App() {
       return null;
     });
   }, []);
+
+  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.dataTransfer.files?.length) {
+      validateAndSetFiles(Array.from(e.dataTransfer.files));
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      validateAndSetFiles(Array.from(e.target.files));
+    }
+  };
 
   // Global Clipboard Paste Listener for Image Converter (Ctrl+V)
   useEffect(() => {

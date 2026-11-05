@@ -312,13 +312,14 @@ export const HomePage: React.FC<HomePageProps> = ({
   }, [tools, searchQuery, selectedCategory]);
 
   // Keep highlightedIndex in sync when search results change
-  useEffect(() => {
-    if (searchQuery.trim() && filteredTools.length > 0) {
-      setHighlightedIndex(0);
-    } else {
-      setHighlightedIndex(-1);
-    }
-  }, [searchQuery, filteredTools.length]);
+  const [prevSearchQuery, setPrevSearchQuery] = useState(searchQuery);
+  const [prevFilteredLength, setPrevFilteredLength] = useState(filteredTools.length);
+
+  if (searchQuery !== prevSearchQuery || filteredTools.length !== prevFilteredLength) {
+    setPrevSearchQuery(searchQuery);
+    setPrevFilteredLength(filteredTools.length);
+    setHighlightedIndex(searchQuery.trim() && filteredTools.length > 0 ? 0 : -1);
+  }
 
   // Scroll active result into view in the dropdown
   useEffect(() => {
