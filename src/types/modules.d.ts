@@ -30,3 +30,4 @@ declare module 'gifenc' {
   export function quantize(rgbaData: Uint8Array | Uint8ClampedArray, maxColors: number, opt?: any): number[][];
   export function applyPalette(rgbaData: Uint8Array | Uint8ClampedArray, palette: number[][], format?: string): Uint8Array;
 }
+

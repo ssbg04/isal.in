@@ -23,6 +23,9 @@ export const PasteDownloadTool: React.FC = () => {
   const [quality, setQuality] = useState<number>(0.92);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [copiedSuccess, setCopiedSuccess] = useState<boolean>(false);
+  const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
+  const [lastDownloadedUrl, setLastDownloadedUrl] = useState<string | null>(null);
+  const [lastDownloadedName, setLastDownloadedName] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -188,6 +191,11 @@ export const PasteDownloadTool: React.FC = () => {
       const converted = await convertImage(file, targetFormat, quality);
 
       if (converted.downloadUrl) {
+        setLastDownloadedUrl(converted.downloadUrl);
+        setLastDownloadedName(filename);
+        setDownloadSuccess(true);
+        setTimeout(() => setDownloadSuccess(false), 3000);
+
         const a = document.createElement('a');
         a.href = converted.downloadUrl;
         a.download = filename;
@@ -239,7 +247,7 @@ export const PasteDownloadTool: React.FC = () => {
               Paste to Download
             </h3>
             <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-              Paste screenshots (<kbd className="font-mono bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded">Ctrl+V</kbd>), clipboard images, or URLs to save instantly.
+              Paste screenshots (<kbd className="font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 px-1.5 py-0.5 rounded border border-neutral-200 dark:border-neutral-700 font-semibold">Ctrl+V</kbd>), clipboard images, or URLs to save instantly.
             </p>
           </div>
         </div>
@@ -247,7 +255,7 @@ export const PasteDownloadTool: React.FC = () => {
         <button
           type="button"
           onClick={handleReadClipboard}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-neutral-950 shadow-sm shadow-amber-500/20 active:scale-95 transition cursor-pointer"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-400 text-neutral-950 dark:text-neutral-950 shadow-sm shadow-amber-500/20 active:scale-95 transition cursor-pointer"
         >
           <Clipboard className="w-3.5 h-3.5" />
           <span>Paste from Clipboard</span>
@@ -273,12 +281,12 @@ export const PasteDownloadTool: React.FC = () => {
               <Clipboard className="w-7 h-7" />
             </div>
             <h3 className="text-base sm:text-lg font-bold text-neutral-950 dark:text-white">
-              Press <kbd className="font-mono bg-black/10 dark:bg-white/10 px-2 py-0.5 rounded-lg">Ctrl + V</kbd> to Paste Any Image
+              Press <kbd className="font-mono bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 px-2 py-0.5 rounded-lg border border-neutral-200 dark:border-neutral-700 font-semibold">Ctrl + V</kbd> to Paste Any Image
             </h3>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 max-w-sm mx-auto">
               Works directly with screenshots, copied web photos, Figma/Photoshop clips, or image files.
             </p>
-            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-neutral-950 shadow-md shadow-amber-500/20">
+            <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-amber-500 text-neutral-950 dark:text-neutral-950 shadow-md shadow-amber-500/20">
               <Clipboard className="w-3.5 h-3.5" />
               <span>Click to Paste from Clipboard</span>
             </div>
@@ -286,7 +294,7 @@ export const PasteDownloadTool: React.FC = () => {
 
           {/* URL Fetch Input */}
           <div className="p-4 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/10 space-y-2">
-            <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+            <label className="text-xs font-semibold text-neutral-700 dark:text-neutral-200 flex items-center gap-1.5">
               <Link className="w-3.5 h-3.5 text-amber-500" />
               <span>Or Paste an Image URL / Base64 Data URI:</span>
             </label>
@@ -297,13 +305,13 @@ export const PasteDownloadTool: React.FC = () => {
                 onChange={(e) => setUrlInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleFetchUrl()}
                 placeholder="https://example.com/photo.jpg or data:image/png;base64,..."
-                className="flex-1 bg-background border border-neutral-300 dark:border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-neutral-900 dark:text-white outline-none focus:border-amber-500 font-mono"
+                className="flex-1 bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 font-mono"
               />
               <button
                 type="button"
                 disabled={isProcessing || !urlInput.trim()}
                 onClick={() => handleFetchUrl()}
-                className="px-4 py-2.5 rounded-xl bg-neutral-900 text-white dark:bg-neutral-800 dark:hover:bg-neutral-700 text-xs font-bold transition disabled:opacity-40 cursor-pointer"
+                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-neutral-950 dark:text-neutral-950 text-xs font-extrabold transition disabled:opacity-40 cursor-pointer shadow-sm shadow-amber-500/20"
               >
                 {isProcessing ? 'Loading...' : 'Load'}
               </button>
@@ -321,11 +329,11 @@ export const PasteDownloadTool: React.FC = () => {
                   PASTED
                 </span>
                 {dimensions && (
-                  <span className="font-mono text-neutral-500">
+                  <span className="font-mono text-neutral-700 dark:text-neutral-300">
                     {dimensions.width} &times; {dimensions.height} px
                   </span>
                 )}
-                <span className="font-mono text-neutral-400">
+                <span className="font-mono text-neutral-500 dark:text-neutral-400">
                   • {formatBytes(imageBlob.size)}
                 </span>
               </div>
@@ -334,7 +342,7 @@ export const PasteDownloadTool: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleCopyImageBack}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-panel text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-panel text-xs font-semibold text-neutral-700 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white cursor-pointer"
                   title="Copy as PNG to clipboard"
                 >
                   {copiedSuccess ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
@@ -347,6 +355,7 @@ export const PasteDownloadTool: React.FC = () => {
                     setImageBlob(null);
                     setPreviewUrl(null);
                     setDimensions(null);
+                    setLastDownloadedUrl(null);
                   }}
                   className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer"
                   title="Paste another image"
@@ -381,45 +390,45 @@ export const PasteDownloadTool: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2 text-xs">
               {/* Filename Input */}
               <div className="space-y-1">
-                <label className="font-bold text-neutral-700 dark:text-neutral-300 block">
+                <label className="font-bold text-neutral-800 dark:text-neutral-200 block">
                   Filename
                 </label>
-                <div className="flex items-center rounded-xl bg-background border border-neutral-300 dark:border-neutral-700 px-3 py-2">
+                <div className="flex items-center rounded-xl bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 px-3 py-2.5 focus-within:border-amber-500 focus-within:ring-2 focus-within:ring-amber-500/20">
                   <Pencil className="w-3.5 h-3.5 text-neutral-400 mr-2 shrink-0" />
                   <input
                     type="text"
                     value={baseFilename}
                     onChange={(e) => setBaseFilename(e.target.value)}
-                    className="w-full bg-transparent font-mono outline-none text-neutral-900 dark:text-white"
+                    className="w-full bg-transparent font-mono outline-none text-neutral-900 dark:text-white text-xs"
                   />
                 </div>
               </div>
 
               {/* Format Selector */}
               <div className="space-y-1">
-                <label className="font-bold text-neutral-700 dark:text-neutral-300 block">
+                <label className="font-bold text-neutral-800 dark:text-neutral-200 block">
                   Save Format
                 </label>
                 <select
                   value={targetFormat}
                   onChange={(e) => setTargetFormat(e.target.value as SupportedImageFormat)}
-                  className="w-full bg-background border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2 text-xs text-neutral-900 dark:text-white outline-none focus:border-amber-500"
+                  className="w-full bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-neutral-900 dark:text-white outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
                 >
-                  <option value="image/png">PNG (Lossless)</option>
-                  <option value="image/webp">WebP (Optimized)</option>
-                  <option value="image/jpeg">JPEG (Standard Photo)</option>
-                  <option value="image/avif">AVIF (Next-Gen)</option>
-                  <option value="image/x-icon">ICO (Icon)</option>
-                  <option value="image/bmp">BMP (Bitmap)</option>
+                  <option value="image/png" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white">PNG (Lossless)</option>
+                  <option value="image/webp" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white">WebP (Optimized)</option>
+                  <option value="image/jpeg" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white">JPEG (Standard Photo)</option>
+                  <option value="image/avif" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white">AVIF (Next-Gen)</option>
+                  <option value="image/x-icon" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white">ICO (Icon)</option>
+                  <option value="image/bmp" className="bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white">BMP (Bitmap)</option>
                 </select>
               </div>
 
               {/* Quality Slider (for lossy formats) */}
               {['image/webp', 'image/jpeg', 'image/avif'].includes(targetFormat) && (
                 <div className="space-y-1 sm:col-span-2 lg:col-span-1">
-                  <div className="flex justify-between items-center font-bold text-neutral-700 dark:text-neutral-300">
+                  <div className="flex justify-between items-center font-bold text-neutral-800 dark:text-neutral-200">
                     <span>Quality</span>
-                    <span className="font-mono text-amber-500">{Math.round(quality * 100)}%</span>
+                    <span className="font-mono text-amber-500 font-bold">{Math.round(quality * 100)}%</span>
                   </div>
                   <input
                     type="range"
@@ -435,20 +444,46 @@ export const PasteDownloadTool: React.FC = () => {
             </div>
 
             {/* Action Download Button */}
-            <div className="pt-2">
+            <div className="pt-2 space-y-3">
               <button
                 type="button"
                 disabled={isProcessing}
                 onClick={handleDownload}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 active:scale-[0.99] transition cursor-pointer disabled:opacity-50"
+                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-neutral-950 dark:text-neutral-950 font-black text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg shadow-amber-500/25 active:scale-[0.99] transition cursor-pointer disabled:opacity-50 ring-2 ring-amber-400/40"
               >
-                <Download className="w-4 h-4" />
-                <span>
-                  {isProcessing
-                    ? 'Processing...'
-                    : `Download as ${targetFormat.replace('image/', '').toUpperCase()}`}
-                </span>
+                {downloadSuccess ? (
+                  <>
+                    <Check className="w-5 h-5 text-emerald-950 stroke-[2.5]" />
+                    <span>Downloaded {lastDownloadedName || 'Image'}!</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-5 h-5 stroke-[2.5]" />
+                    <span>
+                      {isProcessing
+                        ? 'Processing...'
+                        : `Download as ${targetFormat.replace('image/', '').toUpperCase()}`}
+                    </span>
+                  </>
+                )}
               </button>
+
+              {lastDownloadedUrl && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-xs">
+                  <div className="flex items-center gap-2 text-emerald-950 dark:text-emerald-200 font-semibold">
+                    <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>File <strong>{lastDownloadedName}</strong> downloaded.</span>
+                  </div>
+                  <a
+                    href={lastDownloadedUrl}
+                    download={lastDownloadedName}
+                    className="text-emerald-700 dark:text-emerald-300 hover:underline font-bold inline-flex items-center gap-1 self-start sm:self-auto"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Click to download again</span>
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>
