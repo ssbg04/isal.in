@@ -30,10 +30,12 @@ export const VideoConverterTool: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Settings
-  const [targetFormat, setTargetFormat] = useState<'video/webm' | 'video/mp4'>('video/webm');
-  const [resolution, setResolution] = useState<'original' | '1080p' | '720p' | '480p' | '360p'>('original');
+  const [targetFormat, setTargetFormat] = useState<'video/webm' | 'video/mp4' | 'image/gif'>('video/webm');
+  const [resolution, setResolution] = useState<'original' | '1080p' | '720p' | '480p' | '360p' | '240p'>('original');
   const [muteAudio, setMuteAudio] = useState<boolean>(false);
   const [playbackRate, setPlaybackRate] = useState<number>(1.0);
+  const [gifFps, setGifFps] = useState<number>(12);
+  const [gifDuration, setGifDuration] = useState<number>(15);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -64,9 +66,11 @@ export const VideoConverterTool: React.FC = () => {
 
     const options: VideoTranscodeOptions = {
       targetFormat,
-      resolution,
+      resolution: targetFormat === 'image/gif' && resolution === 'original' ? '480p' : resolution,
       muteAudio,
       playbackRate,
+      fps: targetFormat === 'image/gif' ? gifFps : 30,
+      gifMaxSeconds: gifDuration,
     };
 
     try {
@@ -230,7 +234,7 @@ export const VideoConverterTool: React.FC = () => {
               <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider block">
                 Target Format
               </label>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
                   onClick={() => setTargetFormat('video/webm')}
@@ -240,7 +244,7 @@ export const VideoConverterTool: React.FC = () => {
                       : 'bg-neutral-950 border-neutral-800 text-neutral-400'
                   }`}
                 >
-                  WebM (VP9)
+                  WebM
                 </button>
                 <button
                   type="button"
@@ -252,6 +256,17 @@ export const VideoConverterTool: React.FC = () => {
                   }`}
                 >
                   MP4
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetFormat('image/gif')}
+                  className={`p-2 rounded-xl border text-xs font-bold transition-all ${
+                    targetFormat === 'image/gif'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                      : 'bg-neutral-950 border-neutral-800 text-neutral-400'
+                  }`}
+                >
+                  GIF (Loop)
                 </button>
               </div>
             </div>
@@ -300,25 +315,71 @@ export const VideoConverterTool: React.FC = () => {
               </div>
             </div>
 
-            {/* Audio Track */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider block">
-                Audio Option
-              </label>
-              <label className="flex items-center gap-2 p-2 rounded-xl bg-neutral-950 border border-neutral-800 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={muteAudio}
-                  onChange={(e) => setMuteAudio(e.target.checked)}
-                  className="w-4 h-4 rounded text-amber-500 bg-neutral-900 border-neutral-700"
-                />
-                <span className="text-xs text-neutral-300 flex items-center gap-1.5">
-                  <VolumeX className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Mute Audio Track</span>
-                </span>
-              </label>
-            </div>
+            {/* Audio Track or GIF Framerate */}
+            {targetFormat === 'image/gif' ? (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider block">
+                  GIF Smoothness
+                </label>
+                <div className="grid grid-cols-3 gap-1">
+                  {[10, 12, 15].map((fps) => (
+                    <button
+                      key={fps}
+                      type="button"
+                      onClick={() => setGifFps(fps)}
+                      className={`py-1.5 text-xs rounded-lg font-mono transition-colors ${
+                        gifFps === fps
+                          ? 'bg-amber-500 text-neutral-950 font-bold'
+                          : 'bg-neutral-950 border border-neutral-800 text-neutral-400'
+                      }`}
+                    >
+                      {fps} FPS
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider block">
+                  Audio Option
+                </label>
+                <label className="flex items-center gap-2 p-2 rounded-xl bg-neutral-950 border border-neutral-800 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={muteAudio}
+                    onChange={(e) => setMuteAudio(e.target.checked)}
+                    className="w-4 h-4 rounded text-amber-500 bg-neutral-900 border-neutral-700"
+                  />
+                  <span className="text-xs text-neutral-300 flex items-center gap-1.5">
+                    <VolumeX className="w-3.5 h-3.5 text-neutral-400" />
+                    <span>Mute Audio Track</span>
+                  </span>
+                </label>
+              </div>
+            )}
           </div>
+
+          {targetFormat === 'image/gif' && (
+            <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300">
+              <span>GIF duration limit:</span>
+              <div className="flex items-center gap-1.5">
+                {[5, 10, 15, 20].map((sec) => (
+                  <button
+                    key={sec}
+                    type="button"
+                    onClick={() => setGifDuration(sec)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold transition-all ${
+                      gifDuration === sec
+                        ? 'bg-amber-500 text-neutral-950'
+                        : 'bg-neutral-900 text-neutral-400 border border-neutral-700'
+                    }`}
+                  >
+                    {sec}s
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Action Button & Live Progress */}
           <div className="space-y-3">
@@ -329,7 +390,15 @@ export const VideoConverterTool: React.FC = () => {
               className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-neutral-950 font-bold text-sm transition-all shadow-md shadow-amber-500/20 active:scale-95"
             >
               <Sparkles className="w-4 h-4" />
-              <span>{isProcessing ? 'Transcoding Video Stream...' : 'Transcode Video Now'}</span>
+              <span>
+                {isProcessing
+                  ? targetFormat === 'image/gif'
+                    ? 'Generating Animated GIF...'
+                    : 'Transcoding Video Stream...'
+                  : targetFormat === 'image/gif'
+                  ? 'Convert Video to GIF'
+                  : 'Transcode Video Now'}
+              </span>
             </button>
 
             {isProcessing && (
@@ -381,12 +450,16 @@ export const VideoConverterTool: React.FC = () => {
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs transition-colors shadow-sm"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download Transcoded Video</span>
+                  <span>{result.filename.endsWith('.gif') ? 'Download Animated GIF' : 'Download Transcoded Video'}</span>
                 </a>
               </div>
 
-              <div className="rounded-xl overflow-hidden bg-black max-h-80 flex items-center justify-center">
-                <video controls src={result.downloadUrl} className="w-full max-h-80 object-contain" />
+              <div className="rounded-xl overflow-hidden bg-black max-h-80 flex items-center justify-center p-2">
+                {result.filename.endsWith('.gif') ? (
+                  <img src={result.downloadUrl} alt="Converted GIF" className="max-w-full max-h-80 object-contain rounded-lg" />
+                ) : (
+                  <video controls src={result.downloadUrl} className="w-full max-h-80 object-contain" />
+                )}
               </div>
             </div>
           )}

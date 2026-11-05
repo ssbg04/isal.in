@@ -8,11 +8,12 @@ export interface VideoMetadata {
 }
 
 export interface VideoTranscodeOptions {
-  targetFormat: 'video/webm' | 'video/mp4';
-  resolution: 'original' | '1080p' | '720p' | '480p' | '360p';
+  targetFormat: 'video/webm' | 'video/mp4' | 'image/gif';
+  resolution: 'original' | '1080p' | '720p' | '480p' | '360p' | '240p';
   playbackRate?: number; // 0.5, 1, 1.5, 2
   muteAudio?: boolean;
   fps?: number; // default 30
+  gifMaxSeconds?: number;
 }
 
 export interface VideoConversionResult {
@@ -81,12 +82,123 @@ export function captureVideoFrame(
   });
 }
 
+/** Convert video to an animated GIF using gifenc */
+export async function convertVideoToGif(
+  file: File,
+  options: {
+    resolution?: 'original' | '1080p' | '720p' | '480p' | '360p' | '240p';
+    fps?: number;
+    maxDurationSeconds?: number;
+  } = {},
+  onProgress?: (progressPercent: number) => void
+): Promise<VideoConversionResult> {
+  const { video, metadata } = await loadVideoMetadata(file);
+  const { GIFEncoder, quantize, applyPalette } = await import('gifenc');
+
+  // Determine width & height for GIF (max 480px dimension by default for performance/size)
+  let targetWidth = metadata.width;
+  let targetHeight = metadata.height;
+  const maxDim = options.resolution === '240p' ? 240 : options.resolution === '360p' ? 360 : 480;
+
+  if (targetWidth > maxDim || targetHeight > maxDim) {
+    if (targetWidth >= targetHeight) {
+      targetHeight = Math.round((targetHeight * maxDim) / targetWidth);
+      targetWidth = maxDim;
+    } else {
+      targetWidth = Math.round((targetWidth * maxDim) / targetHeight);
+      targetHeight = maxDim;
+    }
+  }
+
+  targetWidth = Math.max(16, Math.floor(targetWidth));
+  targetHeight = Math.max(16, Math.floor(targetHeight));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+  const fps = options.fps || 12;
+  const maxSec = options.maxDurationSeconds || 20;
+  const duration = Math.min(metadata.durationSeconds, maxSec);
+  const totalFrames = Math.max(1, Math.floor(duration * fps));
+  const frameInterval = 1 / fps;
+  const delayMs = Math.round(1000 / fps);
+
+  const gif = GIFEncoder();
+
+  for (let i = 0; i < totalFrames; i++) {
+    const targetTime = i * frameInterval;
+    video.currentTime = targetTime;
+
+    await new Promise<void>((resolve) => {
+      let isResolved = false;
+      const onSeeked = () => {
+        if (!isResolved) {
+          isResolved = true;
+          video.removeEventListener('seeked', onSeeked);
+          resolve();
+        }
+      };
+      video.addEventListener('seeked', onSeeked);
+      setTimeout(() => {
+        if (!isResolved) {
+          isResolved = true;
+          video.removeEventListener('seeked', onSeeked);
+          resolve();
+        }
+      }, 500);
+    });
+
+    ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+    const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+    const palette = quantize(imgData.data, 256);
+    const index = applyPalette(imgData.data, palette);
+
+    gif.writeFrame(index, targetWidth, targetHeight, {
+      palette,
+      delay: delayMs,
+      repeat: 0,
+    });
+
+    if (onProgress) {
+      onProgress(Math.round(((i + 1) / totalFrames) * 100));
+    }
+  }
+
+  gif.finish();
+  const bytes = gif.bytes();
+  const blob = new Blob([bytes as BlobPart], { type: 'image/gif' });
+  const originalBase = file.name.replace(/\.[^/.]+$/, '');
+  const filename = `${originalBase}-animated.gif`;
+  const downloadUrl = URL.createObjectURL(blob);
+
+  return {
+    filename,
+    blob,
+    downloadUrl,
+    sizeBytes: blob.size,
+    durationSeconds: duration,
+    width: targetWidth,
+    height: targetHeight,
+  };
+}
+
 /** Transcode / compress video in-browser using HTML5 Canvas & MediaRecorder */
 export async function transcodeVideoFile(
   file: File,
   options: VideoTranscodeOptions,
   onProgress?: (progressPercent: number) => void
 ): Promise<VideoConversionResult> {
+  if (options.targetFormat === 'image/gif') {
+    return convertVideoToGif(file, {
+      resolution: options.resolution,
+      fps: options.fps || 12,
+      maxDurationSeconds: options.gifMaxSeconds || 20,
+    }, onProgress);
+  }
+
   const { video, metadata } = await loadVideoMetadata(file);
 
   // Compute target dimensions

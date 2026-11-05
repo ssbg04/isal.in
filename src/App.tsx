@@ -47,6 +47,7 @@ import {
   ChevronDown,
   Sliders,
   Sparkles,
+  Clipboard,
 } from 'lucide-react';
 import { HomePage } from './components/HomePage';
 import { ConversionStateIndicator } from './components/ConversionStateIndicator';
@@ -72,6 +73,8 @@ const BmiCalculator = lazy(() => import('./components/tools/BmiCalculator').then
 const PhilippineGwaCalculator = lazy(() => import('./components/tools/PhilippineGwaCalculator').then((m) => ({ default: m.PhilippineGwaCalculator })));
 const AudioConverterTool = lazy(() => import('./components/tools/AudioConverterTool').then((m) => ({ default: m.AudioConverterTool })));
 const VideoConverterTool = lazy(() => import('./components/tools/VideoConverterTool').then((m) => ({ default: m.VideoConverterTool })));
+const PdfConverterTool = lazy(() => import('./components/tools/PdfConverterTool').then((m) => ({ default: m.PdfConverterTool })));
+const PasteDownloadTool = lazy(() => import('./components/tools/PasteDownloadTool').then((m) => ({ default: m.PasteDownloadTool })));
 import type { SupportedImageFormat } from './services/imageFormatsService';
 import type {
   ToolType,
@@ -646,7 +649,7 @@ export function App() {
     }
   };
 
-  const validateAndSetFiles = (incoming: File[]) => {
+  const validateAndSetFiles = useCallback((incoming: File[]) => {
     setErrorMsg(null);
     setResult(null);
     setBatchResults([]);
@@ -678,7 +681,37 @@ export function App() {
       }
       return null;
     });
-  };
+  }, []);
+
+  // Global Clipboard Paste Listener for Image Converter (Ctrl+V)
+  useEffect(() => {
+    if (activeTool !== 'image-convert') return;
+
+    const handleGlobalPaste = (e: ClipboardEvent) => {
+      const activeEl = document.activeElement as HTMLElement | null;
+      if (
+        activeEl &&
+        (activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          activeEl.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.clipboardData?.files && e.clipboardData.files.length > 0) {
+        const imageFiles = Array.from(e.clipboardData.files).filter((f) =>
+          f.type.startsWith('image/')
+        );
+        if (imageFiles.length > 0) {
+          e.preventDefault();
+          validateAndSetFiles(imageFiles);
+        }
+      }
+    };
+
+    window.addEventListener('paste', handleGlobalPaste);
+    return () => window.removeEventListener('paste', handleGlobalPaste);
+  }, [activeTool, validateAndSetFiles]);
 
   const handleRemoveFile = (index: number) => {
     const updated = files.filter((_, i) => i !== index);
@@ -743,6 +776,15 @@ export function App() {
           return URL.createObjectURL(files[index]);
         });
       }
+    }
+  };
+
+  const handleRenameResult = (index: number, newFilename: string) => {
+    setBatchResults((prev) =>
+      prev.map((item, idx) => (idx === index ? { ...item, filename: newFilename } : item))
+    );
+    if (index === selectedResultIndex) {
+      setResult((prev) => (prev ? { ...prev, filename: newFilename } : prev));
     }
   };
 
@@ -1130,10 +1172,14 @@ export function App() {
       if (e.dataTransfer?.files?.length) {
         const incoming = Array.from(e.dataTransfer.files);
         if (incoming.some((f) => f.type.startsWith('image/'))) {
-          if (activeTool !== 'images-to-pdf') {
+          if (
+            activeTool !== 'images-to-pdf' &&
+            activeTool !== 'pdf-to-image' &&
+            activeTool !== 'paste-download'
+          ) {
             setActiveTool('image-convert');
+            validateAndSetFiles(incoming);
           }
-          validateAndSetFiles(incoming);
         } else if (incoming.some((f) => f.name.endsWith('.csv') || f.name.endsWith('.tsv') || f.name.endsWith('.json'))) {
           const file = incoming[0];
           setActiveTool('csv-json');
@@ -1180,7 +1226,7 @@ export function App() {
       window.removeEventListener('dragover', handleDragOver);
       window.removeEventListener('drop', handleWindowDrop);
     };
-  }, [activeTool, handleHashFile]);
+  }, [activeTool, handleHashFile, validateAndSetFiles]);
 
   // Global Keyboard Shortcuts (Ctrl+Enter to execute, '/' to search)
   useEffect(() => {
@@ -1535,6 +1581,8 @@ export function App() {
                           >
                             {tool.id === 'image-convert' && <FileImage className="w-4 h-4" />}
                             {tool.id === 'images-to-pdf' && <FileText className="w-4 h-4" />}
+                            {tool.id === 'pdf-to-image' && <FileImage className="w-4 h-4" />}
+                            {tool.id === 'paste-download' && <Clipboard className="w-4 h-4" />}
                             {tool.id === 'audio-convert' && <Music className="w-4 h-4" />}
                             {tool.id === 'video-convert' && <Video className="w-4 h-4" />}
                             {tool.id === 'json-yaml' && <ArrowRightLeft className="w-4 h-4" />}
@@ -1705,8 +1753,8 @@ export function App() {
               </div>
             )}
 
-            {/* Media Tools (Image / PDF) Workspace */}
-            {(activeTool === 'image-convert' || activeTool === 'images-to-pdf') && (
+            {/* Media Tools (Image Converter) Workspace */}
+            {activeTool === 'image-convert' && (
               <div className="mt-5 space-y-5">
                 {/* 3-Stage Lifecycle Stepper & Security Badge */}
                 <ConversionStateIndicator
@@ -1724,41 +1772,47 @@ export function App() {
                   progressPercent={conversionProgress}
                   errorMessage={errorMsg || undefined}
                   errorRemedy={errorRemedy || undefined}
-                  supportedFormats={activeTool === 'image-convert' ? 'PNG, JPG, WebP, AVIF, BMP, GIF, ICO' : 'PNG, JPG, JPEG'}
+                  supportedFormats="PNG, JPG, WebP, AVIF, BMP, GIF, ICO"
                   maxFileSizeMB={APP_LIMITS.free.maxSingleFileMB}
                   onReset={handleConvertAnother}
-                  outputFormatName={
-                    activeTool === 'image-convert'
-                      ? targetImageFormat.split('/')[1]?.toUpperCase()
-                      : 'PDF'
-                  }
+                  outputFormatName={targetImageFormat.split('/')[1]?.toUpperCase()}
                 />
 
-                {/* Drag & Drop Canvas */}
-                <div
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={handleFileDrop}
-                  className="group relative border-2 border-dashed border-neutral-300/80 dark:border-neutral-700/80 hover:border-amber-500/70 dark:hover:border-amber-400/60 bg-gradient-to-b from-white/70 to-neutral-50/50 dark:from-neutral-900/40 dark:to-[#0c0e14]/60 rounded-3xl p-7 sm:p-9 flex flex-col items-center justify-center text-center transition-all duration-200 hover:shadow-lg hover:shadow-amber-500/5 overflow-hidden"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200 shadow-sm">
-                    <UploadCloud className="w-7 h-7 stroke-[1.8]" />
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold text-neutral-950 dark:text-white">
-                    Drop your {activeTool === 'image-convert' ? 'images' : 'files'} here
-                  </h3>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 max-w-sm">
-                    or choose files directly from your computer or phone
-                  </p>
-                  
-                  <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById('file-upload-input')?.click()}
-                      className="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 shadow-md shadow-amber-500/20 active:scale-95 transition cursor-pointer"
-                    >
-                      Choose {activeTool === 'image-convert' ? 'Images' : 'Files'}
-                    </button>
-                    {activeTool === 'image-convert' && (
+                {/* Hidden global file input so "Add More" / "Convert Another" always works */}
+                <input
+                  id="file-upload-input"
+                  type="file"
+                  multiple={true}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileInput}
+                />
+
+                {/* Drag & Drop Canvas (Shown when no files are queued yet) */}
+                {files.length === 0 ? (
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleFileDrop}
+                    className="group relative border-2 border-dashed border-neutral-300/80 dark:border-neutral-700/80 hover:border-amber-500/70 dark:hover:border-amber-400/60 bg-gradient-to-b from-white/70 to-neutral-50/50 dark:from-neutral-900/40 dark:to-[#0c0e14]/60 rounded-3xl p-7 sm:p-9 flex flex-col items-center justify-center text-center transition-all duration-200 hover:shadow-lg hover:shadow-amber-500/5 overflow-hidden"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200 shadow-sm">
+                      <UploadCloud className="w-7 h-7 stroke-[1.8]" />
+                    </div>
+                    <h3 className="text-base sm:text-lg font-bold text-neutral-950 dark:text-white">
+                      Drop your images here
+                    </h3>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 max-w-sm">
+                      or choose files directly from your computer or phone (or press Ctrl+V to paste)
+                    </p>
+
+                    <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => document.getElementById('file-upload-input')?.click()}
+                        className="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 shadow-md shadow-amber-500/20 active:scale-95 transition cursor-pointer"
+                      >
+                        Choose Images
+                      </button>
                       <button
                         type="button"
                         id="load-sample-image-btn"
@@ -1768,156 +1822,135 @@ export function App() {
                         <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                         <span>Try Sample Image</span>
                       </button>
-                    )}
+                    </div>
                   </div>
-                  <input
-                    id="file-upload-input"
-                    type="file"
-                    multiple={true}
-                    accept={activeTool === 'image-convert' ? 'image/*' : 'image/png,image/jpeg'}
-                    className="hidden"
-                    onChange={handleFileInput}
-                  />
-                </div>
-
-                {/* Interactive Batch Queue Manager */}
-                {files.length > 0 && (
-                  <BatchQueueManager
-                    files={files}
-                    onRemoveFile={handleRemoveFile}
-                    onClearFiles={handleClearFiles}
-                    onAddFiles={handleAddMoreFiles}
-                    onReorderFiles={handleReorderFiles}
-                    targetFormat={targetImageFormat}
-                    onTargetFormatChange={setTargetImageFormat}
-                    isProcessing={isProcessing}
-                    batchResults={batchResults}
-                    selectedResultIndex={selectedResultIndex}
-                    onSelectResult={handleSelectBatchResult}
-                    onDownloadZip={handleDownloadZip}
-                    isZipping={isZipping}
-                    mode={activeTool as 'image-convert' | 'images-to-pdf'}
-                  />
+                ) : (
+                  <div onDragOver={(e) => e.preventDefault()} onDrop={handleFileDrop}>
+                    <BatchQueueManager
+                      files={files}
+                      onRemoveFile={handleRemoveFile}
+                      onClearFiles={handleClearFiles}
+                      onAddFiles={handleAddMoreFiles}
+                      onReorderFiles={handleReorderFiles}
+                      isProcessing={isProcessing}
+                      batchResults={batchResults}
+                      selectedResultIndex={selectedResultIndex}
+                      onSelectResult={handleSelectBatchResult}
+                      onRenameResult={handleRenameResult}
+                      onDownloadZip={handleDownloadZip}
+                      isZipping={isZipping}
+                      mode="image-convert"
+                    />
+                  </div>
                 )}
 
                 {/* Relevant Output Options for Image Converter */}
-                {activeTool === 'image-convert' && (
-                  <div className="space-y-4 pt-1">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Output Format Selector */}
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center justify-between">
-                          <span>Output Format</span>
-                          <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-normal">
-                            Local WebAssembly
-                          </span>
-                        </label>
-                        <select
-                          value={targetImageFormat}
-                          onChange={(e) => setTargetImageFormat(e.target.value as any)}
-                          className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
-                        >
-                          <option value="image/webp">WebP (Optimized / Lightest)</option>
-                          <option value="image/png">PNG (Lossless 32-bit)</option>
-                          <option value="image/jpeg">JPEG / JPG (Standard Photo)</option>
-                          <option value="image/avif">AVIF (Next-Gen Open Media)</option>
-                          <option value="image/bmp">BMP (Uncompressed Bitmap)</option>
-                          <option value="image/x-icon">ICO (Windows & Web Favicon)</option>
-                          <option value="image/gif">GIF (Graphics Interchange)</option>
-                        </select>
-                      </div>
-
-                      {/* Quality Slider with Quick Preset Pills */}
-                      <div className="space-y-1.5">
-                        <div className="flex justify-between items-center text-xs font-bold text-neutral-800 dark:text-neutral-200">
-                          <span>Quality</span>
-                          <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">
-                            {Math.round(imageQuality * 100)}%
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0.1"
-                          max="1.0"
-                          step="0.05"
-                          value={imageQuality}
-                          onChange={(e) => setImageQuality(parseFloat(e.target.value))}
-                          className="w-full accent-amber-500 h-2 mt-2 cursor-pointer"
-                        />
-                        <div className="flex items-center gap-1.5 pt-1">
-                          <button
-                            type="button"
-                            onClick={() => setImageQuality(0.9)}
-                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
-                              imageQuality === 0.9 ? 'bg-amber-500 text-neutral-950 font-bold' : 'glass-panel text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-                            }`}
-                          >
-                            90% High
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setImageQuality(0.8)}
-                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
-                              imageQuality === 0.8 ? 'bg-amber-500 text-neutral-950 font-bold' : 'glass-panel text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-                            }`}
-                          >
-                            80% Balanced
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setImageQuality(0.65)}
-                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
-                              imageQuality === 0.65 ? 'bg-amber-500 text-neutral-950 font-bold' : 'glass-panel text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-                            }`}
-                          >
-                            65% Smallest
-                          </button>
-                        </div>
-                      </div>
+                <div className="space-y-4 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Output Format Selector */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center justify-between">
+                        <span>Output Format</span>
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-normal">
+                          Local WebAssembly
+                        </span>
+                      </label>
+                      <select
+                        value={targetImageFormat}
+                        onChange={(e) => setTargetImageFormat(e.target.value as any)}
+                        className="w-full bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-neutral-900 dark:text-neutral-100 outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500"
+                      >
+                        <option value="image/webp">WebP (Optimized / Lightest)</option>
+                        <option value="image/png">PNG (Lossless 32-bit)</option>
+                        <option value="image/jpeg">JPEG / JPG (Standard Photo)</option>
+                        <option value="image/avif">AVIF (Next-Gen Open Media)</option>
+                        <option value="image/bmp">BMP (Uncompressed Bitmap)</option>
+                        <option value="image/x-icon">ICO (Windows & Web Favicon)</option>
+                        <option value="image/gif">GIF (Graphics Interchange)</option>
+                      </select>
                     </div>
 
-                    {/* Collapsible Advanced Settings (Kept Collapsed Until Needed) */}
-                    <details className="group rounded-2xl glass-panel border border-neutral-200/80 dark:border-white/10 overflow-hidden">
-                      <summary className="px-4 py-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center justify-between cursor-pointer hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50 transition">
-                        <span className="flex items-center gap-2">
-                          <Sliders className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Advanced Settings (EXIF Privacy & Metadata)</span>
+                    {/* Quality Slider with Quick Preset Pills */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between items-center text-xs font-bold text-neutral-800 dark:text-neutral-200">
+                        <span>Quality</span>
+                        <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">
+                          {Math.round(imageQuality * 100)}%
                         </span>
-                        <ChevronDown className="w-4 h-4 text-neutral-400 group-open:rotate-180 transition-transform" />
-                      </summary>
-                      <div className="p-4 pt-2 border-t border-neutral-200/60 dark:border-white/5 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="pr-4">
-                            <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                              Strip EXIF & GPS Metadata
-                            </p>
-                            <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                              Removes camera settings, dates, and geolocation tags from output image.
-                            </p>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={stripExif}
-                            onChange={(e) => setStripExif(e.target.checked)}
-                            className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer"
-                          />
-                        </div>
                       </div>
-                    </details>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="1.0"
+                        step="0.05"
+                        value={imageQuality}
+                        onChange={(e) => setImageQuality(parseFloat(e.target.value))}
+                        className="w-full accent-amber-500 h-2 mt-2 cursor-pointer"
+                      />
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setImageQuality(0.9)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
+                            imageQuality === 0.9 ? 'bg-amber-500 text-neutral-950 font-bold' : 'glass-panel text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                          }`}
+                        >
+                          90% High
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImageQuality(0.8)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
+                            imageQuality === 0.8 ? 'bg-amber-500 text-neutral-950 font-bold' : 'glass-panel text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                          }`}
+                        >
+                          80% Balanced
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImageQuality(0.65)}
+                          className={`px-2 py-0.5 rounded text-[10px] font-medium transition cursor-pointer ${
+                            imageQuality === 0.65 ? 'bg-amber-500 text-neutral-950 font-bold' : 'glass-panel text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+                          }`}
+                        >
+                          65% Smallest
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                )}
 
-                {/* Primary Action Button (State-Aware) */}
-                {files.length === 0 ? (
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById('file-upload-input')?.click()}
-                    className="w-full py-4 bg-neutral-100 dark:bg-neutral-900/60 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-bold text-xs sm:text-sm rounded-2xl border border-dashed border-neutral-300 dark:border-neutral-700 transition flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <UploadCloud className="w-4 h-4 text-amber-500" />
-                    <span>Choose files above to start conversion</span>
-                  </button>
-                ) : (
+                  {/* Collapsible Advanced Settings (Kept Collapsed Until Needed) */}
+                  <details className="group rounded-2xl glass-panel border border-neutral-200/80 dark:border-white/10 overflow-hidden">
+                    <summary className="px-4 py-3 text-xs font-semibold text-neutral-700 dark:text-neutral-300 flex items-center justify-between cursor-pointer hover:bg-neutral-100/50 dark:hover:bg-neutral-800/50 transition">
+                      <span className="flex items-center gap-2">
+                        <Sliders className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Advanced Settings (EXIF Privacy & Metadata)</span>
+                      </span>
+                      <ChevronDown className="w-4 h-4 text-neutral-400 group-open:rotate-180 transition-transform" />
+                    </summary>
+                    <div className="p-4 pt-2 border-t border-neutral-200/60 dark:border-white/5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="pr-4">
+                          <p className="text-xs font-semibold text-neutral-900 dark:text-neutral-100">
+                            Strip EXIF & GPS Metadata
+                          </p>
+                          <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                            Removes camera settings, dates, and geolocation tags from output image.
+                          </p>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={stripExif}
+                          onChange={(e) => setStripExif(e.target.checked)}
+                          className="w-4 h-4 rounded text-amber-500 accent-amber-500 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </details>
+                </div>
+
+                {/* Primary Convert Button (Only shown once files are selected) */}
+                {files.length > 0 && (
                   <button
                     disabled={isProcessing}
                     onClick={handleConvert}
@@ -1926,9 +1959,7 @@ export function App() {
                     <span>
                       {isProcessing
                         ? `Converting on your device (${conversionProgress}%)...`
-                        : activeTool === 'image-convert'
-                        ? `Convert to ${targetImageFormat.split('/')[1]?.toUpperCase()} (${files.length} ${files.length > 1 ? 'Images' : 'Image'})`
-                        : `Merge ${files.length} Images into PDF`}
+                        : `Convert to ${targetImageFormat.split('/')[1]?.toUpperCase()} (${files.length} ${files.length > 1 ? 'Images' : 'Image'})`}
                     </span>
                     <kbd className="hidden sm:inline-block text-[10px] font-mono px-2 py-0.5 rounded-lg bg-black/15 text-neutral-950 font-semibold">
                       Ctrl+↵
@@ -1936,43 +1967,9 @@ export function App() {
                   </button>
                 )}
 
-                {/* Post-Conversion Results & Visual Actions */}
-                {activeTool === 'image-convert' && result?.downloadUrl && originalPreviewUrl && (
-                  <div className="mt-6 space-y-4 pt-4 border-t border-neutral-200/80 dark:border-white/10">
-                    {/* Success Summary Pill */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                          <Check className="w-4 h-4 stroke-[2.5]" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-sm text-emerald-950 dark:text-emerald-200">
-                            Conversion Complete!
-                          </div>
-                          <div className="text-[11px] text-neutral-600 dark:text-neutral-300">
-                            {files[0]?.name} ({files[0] ? (files[0].size > 1024 * 1024 ? `${(files[0].size / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(files[0].size / 1024)} KB`) : ''})
-                            {' → '}
-                            <strong className="text-emerald-700 dark:text-emerald-300 font-mono">
-                              {result.sizeBytes ? (result.sizeBytes > 1024 * 1024 ? `${(result.sizeBytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(result.sizeBytes / 1024)} KB`) : ''}
-                            </strong>
-                            {files[0] && result.sizeBytes && files[0].size > result.sizeBytes && (
-                              <span className="ml-1.5 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-bold font-mono text-[10px]">
-                                -{Math.round(((files[0].size - result.sizeBytes) / files[0].size) * 100)}% smaller
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={handleConvertAnother}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-panel text-xs font-semibold text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:border-amber-500/50 transition cursor-pointer self-start sm:self-auto"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Convert another file</span>
-                      </button>
-                    </div>
-
+                {/* Unified Post-Conversion Preview, Toggle & Rename/Download Bar */}
+                {result?.downloadUrl && originalPreviewUrl && (
+                  <div className="mt-4 pt-3 border-t border-neutral-200/80 dark:border-white/10">
                     <ImageCompareSlider
                       originalUrl={originalPreviewUrl}
                       convertedUrl={result.downloadUrl}
@@ -1982,80 +1979,42 @@ export function App() {
                       convertedSizeBytes={result.sizeBytes}
                       originalFormat={files[selectedResultIndex]?.type.split('/')[1]?.toUpperCase() || files[0]?.type.split('/')[1]?.toUpperCase()}
                       convertedFormat={targetImageFormat.split('/')[1]?.toUpperCase()}
-                      onDownload={() => {
+                      onRename={(newName) => handleRenameResult(selectedResultIndex, newName)}
+                      onDownload={(finalName) => {
                         if (result.downloadUrl) {
                           const a = document.createElement('a');
                           a.href = result.downloadUrl;
-                          a.download = result.filename;
+                          a.download = finalName;
                           a.click();
                         }
                       }}
+                      onConvertAnother={handleConvertAnother}
                     />
-
-                    {/* Single Image Primary Download and Action Bar */}
-                    {batchResults.length <= 1 && (
-                      <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-                        <a
-                          href={result.downloadUrl}
-                          download={result.filename}
-                          className="flex-1 w-full py-4 px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-extrabold text-sm sm:text-base rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 transition cursor-pointer ring-2 ring-amber-400/30"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span>Download {result.filename}</span>
-                        </a>
-
-                        <button
-                          type="button"
-                          onClick={handleConvertAnother}
-                          className="w-full sm:w-auto py-4 px-5 glass-panel border border-neutral-200/80 dark:border-white/10 rounded-2xl text-xs font-bold text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:border-amber-500/50 transition flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                        >
-                          <RotateCcw className="w-4 h-4 text-amber-500" />
-                          <span>Convert Another</span>
-                        </button>
-                      </div>
-                    )}
                   </div>
                 )}
+              </div>
+            )}
 
-                {/* PDF Compilation Result */}
-                {activeTool === 'images-to-pdf' && result?.downloadUrl && (
-                  <div className="mt-6 p-5 rounded-2xl glass-card border border-neutral-200 dark:border-neutral-800 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                          <Check className="w-4 h-4 stroke-[2.5]" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-sm text-emerald-950 dark:text-emerald-200">
-                            PDF Document Created!
-                          </div>
-                          <div className="text-[11px] text-neutral-600 dark:text-neutral-300">
-                            {files.length} images compiled into {result.filename} ({result.sizeBytes ? (result.sizeBytes > 1024 * 1024 ? `${(result.sizeBytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(result.sizeBytes / 1024)} KB`) : ''})
-                          </div>
-                        </div>
-                      </div>
+            {/* 2.2 PDF Workspace: Images to PDF and PDF to Images (Bidirectional) */}
+            {(activeTool === 'images-to-pdf' || activeTool === 'pdf-to-image') && (
+              <div className="mt-5 space-y-6">
+                <Suspense fallback={<ToolLoadingFallback />}>
+                  <PdfConverterTool
+                    key={activeTool}
+                    initialMode={activeTool === 'pdf-to-image' ? 'pdf-to-image' : 'images-to-pdf'}
+                  />
+                </Suspense>
+                <AdSlot placement="post-conversion" />
+              </div>
+            )}
 
-                      <button
-                        onClick={handleConvertAnother}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass-panel text-xs font-semibold text-neutral-800 dark:text-neutral-200 hover:border-amber-500/50 transition cursor-pointer self-start sm:self-auto"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Compile another PDF</span>
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
-                      <a
-                        href={result.downloadUrl}
-                        download={result.filename}
-                        className="flex-1 w-full py-4 px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition cursor-pointer ring-2 ring-amber-400/30"
-                      >
-                        <Download className="w-4 h-4" />
-                        <span>Download PDF ({result.filename})</span>
-                      </a>
-                    </div>
-                  </div>
-                )}
+            {/* 2.3 Media Paste to Download */}
+            {activeTool === 'paste-download' && (
+              <div className="mt-5 space-y-6">
+                <Suspense fallback={<ToolLoadingFallback />}>
+                  <PasteDownloadTool />
+                </Suspense>
+                <AdSlot placement="post-conversion" />
               </div>
             )}
 

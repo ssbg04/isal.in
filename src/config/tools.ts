@@ -1,8 +1,10 @@
 export type ToolType = 
   | 'image-convert'
   | 'images-to-pdf'
+  | 'pdf-to-image'
   | 'audio-convert'
   | 'video-convert'
+  | 'paste-download'
   | 'json-yaml'
   | 'base64'
   | 'url-encode'
@@ -54,6 +56,13 @@ export const TOOLS: ToolMeta[] = [
     badge: 'Media',
   },
   {
+    id: 'pdf-to-image',
+    title: 'PDF to Image Extractor',
+    category: 'media',
+    shortDesc: 'Extract all PDF pages into high-resolution PNG, JPG, or WebP images and ZIP',
+    badge: 'Media',
+  },
+  {
     id: 'audio-convert',
     title: 'Audio Converter & Extractor',
     category: 'media',
@@ -62,10 +71,17 @@ export const TOOLS: ToolMeta[] = [
   },
   {
     id: 'video-convert',
-    title: 'Video Converter & Transcoder',
+    title: 'Video Converter & GIF Maker',
     category: 'media',
-    shortDesc: 'MP4, WebM transcoding, resolution scaling, muting & frame snapshots',
+    shortDesc: 'MP4, WebM transcoding, animated GIF creation, resolution scaling & snapshots',
     badge: 'Video',
+  },
+  {
+    id: 'paste-download',
+    title: 'Paste to Download',
+    category: 'media',
+    shortDesc: 'Paste screenshots, clipboard images, or URLs to preview and download in any format',
+    badge: 'Media',
   },
   {
     id: 'json-yaml',
@@ -226,7 +242,7 @@ export const TOOLS: ToolMeta[] = [
 ];
 
 export const CATEGORIES: { id: Category; label: string; count: number }[] = [
-  { id: 'media', label: 'Media & Documents', count: 4 },
+  { id: 'media', label: 'Media & Documents', count: 6 },
   { id: 'developer', label: 'Data & Formats', count: 7 },
   { id: 'security', label: 'Encoding & Security', count: 2 },
   { id: 'units', label: 'Units & Measurements', count: 8 },

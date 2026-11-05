@@ -55,6 +55,8 @@ interface CommandPaletteProps {
 const TOOL_ICONS: Record<ToolType, React.ReactNode> = {
   'image-convert': <FileImage className="w-4 h-4 text-amber-500" />,
   'images-to-pdf': <FileText className="w-4 h-4 text-rose-500" />,
+  'pdf-to-image': <FileImage className="w-4 h-4 text-rose-500" />,
+  'paste-download': <Clipboard className="w-4 h-4 text-amber-500" />,
   'audio-convert': <Music className="w-4 h-4 text-amber-500" />,
   'video-convert': <Video className="w-4 h-4 text-rose-500" />,
   'json-yaml': <Code2 className="w-4 h-4 text-blue-500" />,
@@ -84,6 +86,8 @@ const TOOL_ICONS: Record<ToolType, React.ReactNode> = {
 const TOOL_ALIASES: Record<ToolType, string[]> = {
   'image-convert': ['webp', 'png', 'jpg', 'jpeg', 'avif', 'bmp', 'ico', 'favicon', 'gif', 'resize', 'dimensions', 'compress', 'scale'],
   'images-to-pdf': ['pdf', 'doc', 'compile', 'merge', 'pages', 'document', 'booklet'],
+  'pdf-to-image': ['pdf', 'extract', 'pages', 'png', 'jpg', 'webp', 'render', 'slides', 'convert pdf'],
+  'paste-download': ['paste', 'clipboard', 'screenshot', 'download', 'ctrl+v', 'url', 'save image', 'inspect'],
   'audio-convert': ['audio', 'music', 'sound', 'mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'volume', 'trim', 'extract audio'],
   'video-convert': ['video', 'movie', 'clip', 'mp4', 'webm', 'mov', 'mkv', 'transcode', 'compress', 'snapshot', 'frame'],
   'json-yaml': ['json', 'yaml', 'yml', 'format', 'beautify', 'minify', 'syntax', 'serialize'],

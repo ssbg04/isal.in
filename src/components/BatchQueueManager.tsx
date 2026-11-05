@@ -12,7 +12,6 @@ import {
   FileCheck,
 } from 'lucide-react';
 import type { ConversionResult } from '../services/conversionService';
-import type { SupportedImageFormat } from '../services/imageFormatsService';
 
 export interface BatchQueueManagerProps {
   files: File[];
@@ -20,16 +19,21 @@ export interface BatchQueueManagerProps {
   onClearFiles: () => void;
   onAddFiles: (files: File[]) => void;
   onReorderFiles?: (fromIndex: number, toIndex: number) => void;
-  targetFormat: SupportedImageFormat;
-  onTargetFormatChange?: (format: SupportedImageFormat) => void;
   isProcessing: boolean;
   batchResults: ConversionResult[];
   selectedResultIndex: number;
   onSelectResult: (index: number) => void;
+  onRenameResult?: (index: number, newFilename: string) => void;
   onDownloadZip: () => void;
   isZipping: boolean;
   mode?: 'image-convert' | 'images-to-pdf';
 }
+
+const splitFilename = (name: string): { base: string; ext: string } => {
+  const lastDot = name.lastIndexOf('.');
+  if (lastDot <= 0) return { base: name, ext: '' };
+  return { base: name.slice(0, lastDot), ext: name.slice(lastDot) };
+};
 
 export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
   files,
@@ -37,12 +41,11 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
   onClearFiles,
   onAddFiles,
   onReorderFiles,
-  targetFormat,
-  onTargetFormatChange,
   isProcessing,
   batchResults,
   selectedResultIndex,
   onSelectResult,
+  onRenameResult,
   onDownloadZip,
   isZipping,
   mode = 'image-convert',
@@ -96,12 +99,12 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
   if (files.length === 0) return null;
 
   return (
-    <div className="space-y-3.5 rounded-3xl p-4 sm:p-5 glass-card border border-neutral-200/80 dark:border-white/10 relative overflow-hidden">
+    <div className="space-y-3 rounded-3xl p-4 sm:p-5 glass-card border border-neutral-200/80 dark:border-white/10 relative overflow-hidden">
       {/* Top Specular Edge Glow */}
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-amber-500/40 to-transparent pointer-events-none" />
 
-      {/* Header Toolbar: Count, Total Size & Clear */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-neutral-200/60 dark:border-white/10 text-xs">
+      {/* Header Toolbar: Count, Total Size, Add More & Clear */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-neutral-200/60 dark:border-white/10 text-xs">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
             <Layers className="w-3.5 h-3.5" />
@@ -109,10 +112,10 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-neutral-900 dark:text-white text-sm">
-                Batch Queue ({files.length} file{files.length === 1 ? '' : 's'})
+                Selected Files ({files.length})
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200/70 dark:border-white/5">
-                {formatBytes(totalInputBytes)} Total
+                {formatBytes(totalInputBytes)}
               </span>
             </div>
             {mode === 'images-to-pdf' && (
@@ -123,34 +126,11 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
           </div>
         </div>
 
-        {/* Global Format Selector (Quick Switcher) */}
+        {/* Actions: Add More + Clear */}
         <div className="flex items-center gap-2">
-          {mode === 'image-convert' && onTargetFormatChange && (
-            <div className="inline-flex flex-wrap rounded-xl glass-panel p-0.5 text-xs border border-neutral-200/80 dark:border-white/5">
-              {(['image/webp', 'image/png', 'image/jpeg', 'image/avif', 'image/bmp', 'image/x-icon', 'image/gif'] as const).map((fmt) => {
-                const label = fmt === 'image/x-icon' ? 'ICO' : fmt === 'image/jpeg' ? 'JPG' : fmt.split('/')[1].toUpperCase();
-                return (
-                  <button
-                    key={fmt}
-                    type="button"
-                    onClick={() => onTargetFormatChange(fmt)}
-                    className={`px-2 py-1 rounded-lg font-semibold text-[10px] sm:text-[11px] transition cursor-pointer ${
-                      targetFormat === fmt
-                        ? 'bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 shadow-xs'
-                        : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Add More Files Trigger */}
           <label className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold glass-panel border border-neutral-200/80 dark:border-white/10 hover:border-amber-500/40 text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white transition cursor-pointer shadow-2xs">
             <Plus className="w-3.5 h-3.5 text-amber-500" />
-            <span>Add Files</span>
+            <span>Add More</span>
             <input
               type="file"
               multiple
@@ -160,7 +140,6 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
             />
           </label>
 
-          {/* Clear All */}
           <button
             type="button"
             onClick={onClearFiles}
@@ -172,17 +151,17 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
         </div>
       </div>
 
-      {/* Savings Metric Banner (if converted in batch) */}
-      {batchResults.length > 0 && savingsPercent > 0 && (
-        <div className="px-3.5 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-400">
+      {/* Savings Metric Banner (only shown for multi-file batch conversion) */}
+      {batchResults.length > 1 && savingsPercent > 0 && (
+        <div className="px-3.5 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs text-emerald-700 dark:text-emerald-400">
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
             <span className="font-semibold">
-              Batch Compression Complete: Saved {savingsPercent}% payload ({formatBytes(totalInputBytes - totalOutputBytes)} reduced)
+              Batch Saved {savingsPercent}% ({formatBytes(totalInputBytes - totalOutputBytes)} reduced)
             </span>
           </div>
           <span className="font-mono text-[11px] font-bold">
-            {formatBytes(totalOutputBytes)} output
+            {formatBytes(totalOutputBytes)} total
           </span>
         </div>
       )}
@@ -192,6 +171,7 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
         {files.map((file, idx) => {
           const isResultItem = batchResults[idx];
           const isSelected = selectedResultIndex === idx;
+          const parsedOut = isResultItem ? splitFilename(isResultItem.filename) : null;
 
           return (
             <div
@@ -207,12 +187,10 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
             >
               {/* Left: Thumbnail & Info */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                {/* Index / Page Number Badge */}
                 <span className="w-5 h-5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 font-mono text-[10px] flex items-center justify-center shrink-0">
                   {idx + 1}
                 </span>
 
-                {/* Image Thumbnail */}
                 {previews[idx] ? (
                   <img
                     src={previews[idx]}
@@ -225,16 +203,36 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
                   </div>
                 )}
 
-                {/* File Details */}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-neutral-900 dark:text-white truncate text-xs sm:text-sm">
-                      {file.name}
-                    </p>
-                    <span className="text-[9px] font-mono uppercase px-1.5 py-0.2 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 shrink-0">
-                      {file.type.split('/')[1] || 'IMAGE'}
-                    </span>
-                  </div>
+                  {isResultItem && parsedOut && onRenameResult && files.length > 1 ? (
+                    <div
+                      className="flex items-center gap-1 max-w-xs"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="text"
+                        value={parsedOut.base}
+                        onChange={(e) => {
+                          const clean = e.target.value.replace(/[\\/:*?"<>|]+/g, '_');
+                          onRenameResult(idx, `${clean || 'image'}${parsedOut.ext}`);
+                        }}
+                        aria-label={`Rename output file ${idx + 1}`}
+                        className="w-full px-2 py-0.5 rounded-md bg-background border border-neutral-300 dark:border-neutral-700 focus:border-amber-500 font-mono text-xs text-neutral-900 dark:text-white outline-none"
+                      />
+                      <span className="text-[10px] font-mono text-neutral-500 shrink-0">
+                        {parsedOut.ext}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-neutral-900 dark:text-white truncate text-xs sm:text-sm">
+                        {isResultItem ? isResultItem.filename : file.name}
+                      </p>
+                      <span className="text-[9px] font-mono uppercase px-1.5 py-0.2 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 shrink-0">
+                        {file.type.split('/')[1] || 'IMAGE'}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-500 dark:text-neutral-400 mt-0.5">
                     <span>{formatBytes(file.size)}</span>
@@ -255,7 +253,6 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
 
               {/* Right: Actions (Reorder / Download / Delete) */}
               <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                {/* Page Reorder for PDF */}
                 {mode === 'images-to-pdf' && onReorderFiles && (
                   <div className="flex items-center gap-0.5 mr-1">
                     <button
@@ -279,7 +276,6 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
                   </div>
                 )}
 
-                {/* Individual Download if Converted */}
                 {isResultItem?.downloadUrl && (
                   <a
                     href={isResultItem.downloadUrl}
@@ -291,7 +287,6 @@ export const BatchQueueManager: React.FC<BatchQueueManagerProps> = ({
                   </a>
                 )}
 
-                {/* Remove from Queue */}
                 <button
                   type="button"
                   disabled={isProcessing}
