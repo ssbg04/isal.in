@@ -1,4 +1,4 @@
-const CACHE_NAME = 'isalin-cache-v8';
+const CACHE_NAME = 'isalin-cache-v9';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
@@ -8,12 +8,14 @@ const PRECACHE_ASSETS = [
   '/icon-512.png',
 ];
 
-// Domains that should NEVER be cached or block offline usage (e.g. ad networks)
+// Domains that should NEVER be cached or block offline usage (e.g. ad networks, external CDNs)
 const IGNORE_HOSTS = [
   'media.ethicalads.io',
   'server.ethicalads.io',
   'pagead2.googlesyndication.com',
   'googleads.g.doubleclick.net',
+  'fonts.googleapis.com',
+  'fonts.gstatic.com',
 ];
 
 // Install: Pre-cache shell assets
