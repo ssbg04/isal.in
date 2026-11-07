@@ -28,7 +28,7 @@ export type ToolType =
   | 'bmi-calc'
   | 'gwa-calc';
 
-export const SITE_URL = 'https://isalin.us.ci';
+export const SITE_URL = 'https://isal.in';
 export const SITE_NAME = 'Isalin';
 export type Category = 'media' | 'developer' | 'security' | 'units' | 'calculators';
 

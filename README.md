@@ -2,7 +2,7 @@
 
 A private, client-side React and TypeScript web app for converting files, data, units, and common calculations in the browser.
 
-Live at https://isalin.us.ci (the Vercel domain isal-in.vercel.app permanently redirects there).
+Live at https://isal.in (isal-in.vercel.app and isalin.us.ci permanently redirect there).
 
 ## Development
 

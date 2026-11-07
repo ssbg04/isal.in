@@ -37,6 +37,7 @@ export function seoPages(): Plugin {
         html = setMeta(html, /(<meta property="og:description" content=")[^"]*"/, desc);
         html = setMeta(html, /(<meta name="twitter:title" content=")[^"]*"/, title);
         html = setMeta(html, /(<meta name="twitter:description" content=")[^"]*"/, desc);
+        html = html.replace(`"url": "${SITE_URL}"`, `"url": "${url}"`);
         // Crawlable fallback content; React replaces it on mount.
         html = html.replace(
           '<div id="root"></div>',

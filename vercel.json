@@ -28,12 +28,34 @@
                 ],
     "redirects":  [
                       {
-                          "destination":  "https://isalin.us.ci/:path",
+                          "destination":  "https://isal.in/:path",
                           "permanent":  true,
                           "source":  "/:path(.*)",
                           "has":  [
                                       {
                                           "value":  "isal-in.vercel.app",
+                                          "type":  "host"
+                                      }
+                                  ]
+                      },
+                      {
+                          "destination":  "https://isal.in/:path",
+                          "permanent":  true,
+                          "source":  "/:path(.*)",
+                          "has":  [
+                                      {
+                                          "value":  "isalin.us.ci",
+                                          "type":  "host"
+                                      }
+                                  ]
+                      },
+                      {
+                          "destination":  "https://isal.in/:path",
+                          "permanent":  true,
+                          "source":  "/:path(.*)",
+                          "has":  [
+                                      {
+                                          "value":  "www.isal.in",
                                           "type":  "host"
                                       }
                                   ]
