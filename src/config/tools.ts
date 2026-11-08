@@ -250,3 +250,4 @@ export const CATEGORIES: { id: Category; label: string; count: number }[] = [
 ];
 
 export const isToolId = (id: string): id is ToolType => TOOLS.some((t) => t.id === id);
+export const getToolMeta = (id: ToolType): ToolMeta | undefined => TOOLS.find((t) => t.id === id);

@@ -219,9 +219,12 @@ export function evaluateMathExpression(input: string): MathEvalResult {
   // Check if expression contains arithmetic operators
   const hasOperator = /[+\-*/^()]/.test(trimmed);
   if (!hasOperator) {
-    const num = parseFloat(trimmed);
-    if (!isNaN(num) && isFinite(num)) {
-      return { isValid: true, value: num, isExpression: false, formattedPreview: null };
+    // Only accept strictly numeric strings without trailing non-numeric characters
+    if (/^[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)$/.test(trimmed)) {
+      const num = Number(trimmed);
+      if (!isNaN(num) && isFinite(num)) {
+        return { isValid: true, value: num, isExpression: false, formattedPreview: null };
+      }
     }
     return { isValid: false, value: null, isExpression: false, formattedPreview: null };
   }
