@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About Us — Isalin Multi-Converter</title>
+    <meta name="description" content="About Isalin Multi-Converter. Learn about our mission, our creator Cris Charles Garcia, and why zero-upload client-side conversion protects user privacy." />
+    <link rel="canonical" href="https://isal.in/about" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #0a0a0a;
+        --card-bg: rgba(23, 23, 23, 0.7);
+        --border: rgba(255, 255, 255, 0.1);
+        --text: #e5e5e5;
+        --text-muted: #a3a3a3;
+        --heading: #ffffff;
+        --accent: #f59e0b;
+        --accent-glow: rgba(245, 158, 11, 0.15);
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f8fafc;
+          --card-bg: rgba(255, 255, 255, 0.85);
+          --border: rgba(0, 0, 0, 0.08);
+          --text: #334155;
+          --text-muted: #64748b;
+          --heading: #0f172a;
+          --accent: #d97706;
+          --accent-glow: rgba(217, 119, 6, 0.12);
+        }
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        line-height: 1.7;
+        padding: 2rem 1rem;
+      }
+      .container {
+        max-width: 840px;
+        margin: 0 auto;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 3rem 2.5rem;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      }
+      .nav-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: opacity 0.2s;
+      }
+      .back-link:hover { opacity: 0.8; }
+      .badge {
+        background: var(--accent-glow);
+        color: var(--accent);
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      h1 {
+        font-size: 2.25rem;
+        color: var(--heading);
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.02em;
+      }
+      .tagline {
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 1.75rem;
+      }
+      h2 {
+        font-size: 1.35rem;
+        color: var(--heading);
+        margin: 2rem 0 0.75rem;
+        font-weight: 700;
+      }
+      p, ul {
+        margin-bottom: 1.25rem;
+        font-size: 0.975rem;
+      }
+      ul { padding-left: 1.5rem; }
+      li { margin-bottom: 0.5rem; }
+      strong { color: var(--heading); }
+      .grid-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.25rem;
+        margin: 1.5rem 0;
+      }
+      .card {
+        background: rgba(0,0,0,0.04);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.25rem;
+      }
+      .card h3 {
+        font-size: 1.05rem;
+        color: var(--heading);
+        margin-bottom: 0.5rem;
+      }
+      .card p {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        margin-bottom: 0;
+      }
+      footer {
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+      footer a { color: var(--text); text-decoration: none; }
+      footer a:hover { color: var(--accent); }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <div class="nav-bar">
+        <a href="/" class="back-link">← Back to Isalin</a>
+        <span class="badge">About the Project</span>
+      </div>
+
+      <h1>About Isalin Multi-Converter</h1>
+      <p class="tagline">"Isalin ang lahat. Convert anything."</p>
+
+      <h2>Our Story & Philosophy</h2>
+      <p>The word <strong>"Isalin"</strong> is Filipino (Tagalog) for <em>to transfer, translate, pour, or convert</em>. In modern digital workflows, everyday users and developers constantly need to convert image formats, compile PDFs, format JSON data, or calculate tax deductions. Unfortunately, most free conversion websites upload user files to opaque overseas cloud servers, where they risk being retained, scanned, or leaked.</p>
+      <p>Isalin was founded on a simple principle: <strong>privacy should not be a luxury, and basic conversions should not require uploading personal files to remote machines.</strong> With modern WebAssembly, Web Workers, and HTML5 Canvas APIs, personal devices are more than powerful enough to handle conversions locally in seconds.</p>
+
+      <h2>Key Architectural Pillars</h2>
+      <div class="grid-cards">
+        <div class="card">
+          <h3>100% Client-Side Privacy</h3>
+          <p>Every file conversion and calculation runs strictly inside your local browser memory sandbox. No remote server ever touches your data.</p>
+        </div>
+        <div class="card">
+          <h3>Zero Wait Queues</h3>
+          <p>Because there are no overloaded remote servers or upload bottlenecks, conversions complete instantaneously utilizing your hardware acceleration.</p>
+        </div>
+        <div class="card">
+          <h3>Offline-Ready PWA</h3>
+          <p>Installable as a Progressive Web App on Windows, macOS, Android, and iOS. Works seamlessly even when traveling with no internet access.</p>
+        </div>
+      </div>
+
+      <h2>Creator & Development</h2>
+      <p>Isalin is designed and developed by <strong>Cris Charles Garcia</strong>, a software developer based in Cavite, Philippines. The project is built using modern open-source web technologies: React, TypeScript, Vite, Tailwind CSS, <code>pdf-lib</code>, and Web APIs.</p>
+
+      <h2>Contact & Community</h2>
+      <p>We actively listen to user suggestions and bug reports. If there is a file format, measurement unit, or Philippine utility you would like added to Isalin, please reach out via our <a href="/contact">contact page</a> or email us directly at <strong>crischarlesgarcia345@gmail.com</strong>.</p>
+
+      <footer>
+        <div>© 2026 Isalin Multi-Converter. All rights reserved.</div>
+        <div>
+          <a href="/privacy">Privacy</a> •
+          <a href="/terms">Terms</a> •
+          <a href="/about">About</a> •
+          <a href="/contact">Contact</a>
+        </div>
+      </footer>
+    </main>
+  </body>
+</html>
+

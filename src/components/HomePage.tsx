@@ -213,14 +213,14 @@ interface HomePageProps {
   tools: ToolMeta[];
   onSelectTool: (toolId: ToolType, preset?: { targetFormat?: string; mode?: string }) => void;
   onDropFiles?: (files: File[]) => void;
-  onOpenPrivacy: () => void;
+  onOpenPrivacy?: () => void;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
   tools,
   onSelectTool,
   onDropFiles,
-  onOpenPrivacy,
+  onOpenPrivacy: _onOpenPrivacy,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
@@ -930,13 +930,138 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         <div className="mt-8 text-center">
-          <button
-            onClick={onOpenPrivacy}
+          <a
+            href="/privacy"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline cursor-pointer focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded-md px-1"
           >
             <span>Learn more about our client-side architecture & security practices</span>
             <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          </a>
+        </div>
+      </section>
+
+      {/* 6. EDUCATIONAL EDITORIAL GUIDES & FORMAT COMPENDIUM */}
+      <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-12 border-t border-neutral-200 dark:border-neutral-800" aria-label="Format Guides and Documentation">
+        <div className="text-center max-w-3xl mx-auto mb-10">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-950 dark:text-white">
+            Guides, Specifications & Reference Manuals
+          </h2>
+          <p className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 mt-2">
+            Technical overviews on modern image compression, document formats, developer serialization, and regional tax computations.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-neutral-800 dark:text-neutral-200 text-xs sm:text-sm leading-relaxed">
+          <article className="p-6 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/10 space-y-3">
+            <h3 className="text-base font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              Image Optimization: WebP, AVIF, PNG, & JPEG
+            </h3>
+            <p>
+              Choosing the right graphic format significantly affects page load performance, storage bandwidth, and visual fidelity:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-neutral-600 dark:text-neutral-300">
+              <li><strong>WebP:</strong> Developed by Google, WebP provides superior lossless and lossy compression for web assets. WebP lossless images are roughly 26% smaller than PNGs, and lossy files are 25–34% smaller than comparable JPEGs.</li>
+              <li><strong>AVIF:</strong> Derived from the AV1 video codec, AVIF delivers highest compression efficiency with full 10-bit color and HDR support, ideal for modern web design.</li>
+              <li><strong>PNG:</strong> Lossless format ideal for graphics with crisp text, logos, and alpha-channel transparency where zero compression artifacts are permissible.</li>
+              <li><strong>JPEG:</strong> Standard lossy format best suited for complex photographic content without transparency.</li>
+            </ul>
+          </article>
+
+          <article className="p-6 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/10 space-y-3">
+            <h3 className="text-base font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Philippine TRAIN Law & Statutory Deduction Rules
+            </h3>
+            <p>
+              Under Republic Act No. 10963 (Tax Reform for Acceleration and Inclusion - TRAIN Law) updated for 2023 onwards:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-neutral-600 dark:text-neutral-300">
+              <li><strong>0% Withholding Tax:</strong> Annual taxable income of ₱250,000 or below (₱20,833 monthly) is completely tax-exempt.</li>
+              <li><strong>De Minimis & 13th Month:</strong> Mandatory 13th-month pay and other benefits up to ₱90,000 annually remain non-taxable.</li>
+              <li><strong>Statutory Deductions:</strong> SSS contributions follow the monthly salary credit table, PhilHealth premiums are split equally between employer and employee at 5%, and Pag-IBIG contributions are calculated up to statutory salary caps.</li>
+            </ul>
+          </article>
+
+          <article className="p-6 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/10 space-y-3">
+            <h3 className="text-base font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-sky-500"></span>
+              Data Exchange Formats: JSON, YAML, and CSV
+            </h3>
+            <p>
+              Bridging structured data across developer ecosystems:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-neutral-600 dark:text-neutral-300">
+              <li><strong>JSON (JavaScript Object Notation):</strong> The universal data-interchange standard for RESTful APIs and modern web architectures.</li>
+              <li><strong>YAML (YAML Ain't Markup Language):</strong> A human-friendly data serialization format commonly employed in configuration files, CI/CD pipelines (GitHub Actions, Kubernetes), and cloud infrastructure.</li>
+              <li><strong>CSV/TSV:</strong> Tabular representation essential for spreadsheets, financial datasets, and data analysis pipelines. Isalin provides auto-delimiter detection and schema conversion.</li>
+            </ul>
+          </article>
+
+          <article className="p-6 rounded-2xl glass-card border border-neutral-200/80 dark:border-white/10 space-y-3">
+            <h3 className="text-base font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+              Cryptographic Hash Integrity Verification
+            </h3>
+            <p>
+              Cryptographic hashes compute deterministic, fixed-size mathematical digests from arbitrary data strings or binary files:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-neutral-600 dark:text-neutral-300">
+              <li><strong>SHA-256 / SHA-512:</strong> Cryptographically secure hash algorithms recommended for software release verification, package checksums, and cryptographic signatures.</li>
+              <li><strong>Integrity Verification:</strong> Comparing the computed SHA-256 digest of a downloaded file against the published checksum ensures the file was not tampered with, corrupted in transit, or infected with malware.</li>
+              <li><strong>MD5 & SHA-1:</strong> Provided for legacy checksum comparisons and non-cryptographic deduplication checks.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      {/* 7. FREQUENTLY ASKED QUESTIONS */}
+      <section className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-12 border-t border-neutral-200 dark:border-neutral-800" aria-label="Frequently Asked Questions">
+        <div className="text-center mb-8">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-950 dark:text-white">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 mt-2">
+            Answers to common questions regarding security, file limits, and offline capabilities.
+          </p>
+        </div>
+
+        <div className="space-y-4 text-xs sm:text-sm">
+          <div className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/40">
+            <h4 className="font-bold text-neutral-900 dark:text-white text-sm mb-1.5">
+              How does Isalin convert files without uploading them?
+            </h4>
+            <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+              Isalin runs entirely in your web browser. When you select an image, audio clip, or data file, modern browser APIs (such as the HTML5 Canvas, Web Workers, and WebAssembly) read and transcode the raw binary buffer directly in your device's memory. No network requests are made to any remote backend server.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/40">
+            <h4 className="font-bold text-neutral-900 dark:text-white text-sm mb-1.5">
+              Is there a file size limit?
+            </h4>
+            <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+              Because processing uses your computer or phone's memory, generous practical limits (e.g. 25MB for single images, 50MB batch total) ensure your browser tab remains responsive and never crashes due to memory exhaustion.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/40">
+            <h4 className="font-bold text-neutral-900 dark:text-white text-sm mb-1.5">
+              Are calculations in the Philippine Tax Calculator up to date?
+            </h4>
+            <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+              Yes. The Philippine income tax calculator incorporates the updated withholding tax brackets mandated by Republic Act No. 10963 (TRAIN Law), as well as current statutory contribution ceilings for SSS, PhilHealth, and Pag-IBIG fund contributions.
+            </p>
+          </div>
+
+          <div className="p-5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/40">
+            <h4 className="font-bold text-neutral-900 dark:text-white text-sm mb-1.5">
+              Can I install Isalin on my phone or computer?
+            </h4>
+            <p className="text-neutral-600 dark:text-neutral-300 leading-relaxed">
+              Yes. Isalin is a Progressive Web App (PWA). In Chrome, Safari, or Edge, tap the "Install" or "Add to Home Screen" option to use Isalin as a standalone app with full offline capabilities.
+            </p>
+          </div>
         </div>
       </section>
     </div>

@@ -3629,23 +3629,43 @@ export function App() {
               Zero-Upload Developer & Philippine Utility Suite
             </span>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 text-[11px] sm:text-xs">
             <a
-              href="mailto:crischarlesgarcia345@gmail.com?subject=Isalin%20Suggestion%20or%20Issue%20Report&body=Hi!%20I%20have%20a%20suggestion%20or%20would%20like%20to%20report%20an%20issue%20with%20Isalin:%0A%0A-%20Tool%20/%20Category:%0A-%20Details:%0A"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-semibold transition cursor-pointer hover:scale-105 active:scale-95 shadow-2xs"
-              title="Have a suggestion or found an issue? Send us an email!"
-            >
-              <Mail className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Suggestions / Issues</span>
-            </a>
-            <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
-            <button
-              onClick={() => setIsPrivacyOpen(true)}
-              className="text-neutral-700 dark:text-neutral-300 hover:text-amber-500 dark:hover:text-amber-400 font-medium transition cursor-pointer"
-              aria-haspopup="dialog"
+              href="/privacy"
+              className="text-neutral-700 dark:text-neutral-300 hover:text-amber-500 dark:hover:text-amber-400 font-medium transition"
             >
               Privacy Policy
-            </button>
+            </a>
+            <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
+            <a
+              href="/terms"
+              className="text-neutral-700 dark:text-neutral-300 hover:text-amber-500 dark:hover:text-amber-400 font-medium transition"
+            >
+              Terms of Service
+            </a>
+            <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
+            <a
+              href="/about"
+              className="text-neutral-700 dark:text-neutral-300 hover:text-amber-500 dark:hover:text-amber-400 font-medium transition"
+            >
+              About
+            </a>
+            <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
+            <a
+              href="/contact"
+              className="text-neutral-700 dark:text-neutral-300 hover:text-amber-500 dark:hover:text-amber-400 font-medium transition"
+            >
+              Contact
+            </a>
+            <span className="text-neutral-300 dark:text-neutral-700" aria-hidden="true">•</span>
+            <a
+              href="mailto:crischarlesgarcia345@gmail.com?subject=Isalin%20Suggestion%20or%20Issue%20Report&body=Hi!%20I%20have%20a%20suggestion%20or%20would%20like%20to%20report%20an%20issue%20with%20Isalin:%0A%0A-%20Tool%20/%20Category:%0A-%20Details:%0A"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-semibold transition cursor-pointer"
+              title="Have a suggestion or found an issue? Send us an email!"
+            >
+              <Mail className="w-3 h-3" aria-hidden="true" />
+              <span>Feedback</span>
+            </a>
           </div>
         </div>
       </footer>

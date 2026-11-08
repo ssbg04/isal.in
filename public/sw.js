@@ -1,7 +1,11 @@
-const CACHE_NAME = 'isalin-cache-v9';
+const CACHE_NAME = 'isalin-cache-v10';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
+  '/privacy',
+  '/terms',
+  '/about',
+  '/contact',
   '/manifest.json',
   '/favicon.svg',
   '/icon-192.png',

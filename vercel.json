@@ -61,6 +61,12 @@
                                   ]
                       }
                   ],
-    "cleanUrls":  true,
-    "trailingSlash":  false
+    "cleanUrls": true,
+    "trailingSlash": false,
+    "rewrites": [
+        {
+            "source": "/((?!privacy|terms|about|contact|sw\\.js|manifest\\.json|ads\\.txt|assets|favicon|icon|.*\\..*).*)",
+            "destination": "/index.html"
+        }
+    ]
 }

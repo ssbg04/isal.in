@@ -21,22 +21,12 @@ const configs = {
 
 export const AdSlot: React.FC<AdSlotProps> = ({ placement, className = '' }) => {
   const adRef = useRef<HTMLModElement>(null);
+  const isPostConversion = placement === 'post-conversion';
   const item = configs[placement];
-  const canRenderAd = AD_CONFIG.enabled && AD_CONFIG.googleClient && AD_CONFIG.googleSlot;
+  const canRenderAd = !isPostConversion && AD_CONFIG.enabled && AD_CONFIG.googleClient && AD_CONFIG.googleSlot;
 
   useEffect(() => {
     if (!canRenderAd || !adRef.current || typeof window === 'undefined') return;
-
-    const SCRIPT_ID = 'google-adsense-script';
-    let script = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
-    if (!script) {
-      script = document.createElement('script');
-      script.id = SCRIPT_ID;
-      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${AD_CONFIG.googleClient}`;
-      script.async = true;
-      script.crossOrigin = 'anonymous';
-      document.head.appendChild(script);
-    }
 
     const pushAd = () => {
       try {
@@ -49,10 +39,14 @@ export const AdSlot: React.FC<AdSlotProps> = ({ placement, className = '' }) => 
     if (window.adsbygoogle) {
       pushAd();
     } else {
-      script.addEventListener('load', pushAd, { once: true });
-      window.setTimeout(pushAd, 300);
+      window.setTimeout(pushAd, 500);
     }
   }, [canRenderAd]);
+
+  // Policy Compliance: Never render Google-served ads on post-conversion or behavioral screens
+  if (isPostConversion) {
+    return null;
+  }
 
   return (
     <aside role="region" aria-label="Advertisement" className={`relative flex flex-col items-center justify-center rounded-xl border border-border bg-muted/40 p-3 text-center ${item.containerClass} ${className}`}>
