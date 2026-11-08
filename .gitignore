@@ -19,6 +19,12 @@ security-audit.json
 # MDs
 MONETIZATION.md
 
+# Autonomous agent infrastructure
+AGENTS.md
+agents/
+skills/
+.agents/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
